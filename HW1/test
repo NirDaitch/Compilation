@@ -2,6 +2,7 @@
 
 /* Declarations section */
 #include <stdio.h>
+#include <string.h>
 void showToken(char *);
 
 %}
@@ -14,7 +15,10 @@ digit   		([0-9])
 letter  		([a-zA-Z])
 whitespace		([\t\n ])
 endofline       (\x0D|\x0D\x0A|\x0A)
-
+plusorminus 	([+-])
+integer 		({plusorminus}?{digit}+)
+hexaNum			(0x[0-9a-fA-F]+)
+octalNum		(0o[0-7]+)
 
 %%
 
@@ -37,15 +41,19 @@ endofline       (\x0D|\x0D\x0A|\x0A)
 
 (!!{letter}+)			showToken("TYPE");
 
-(#.*{endofline})			showToken("COMMENT");
+
+(#[^{endofline}]*{endofline})	showToken("COMMENT");
 
 (true)			showToken("TRUE");
+
 (false)			showToken("FALSE");
 
+({integer}|{hexaNum}|{octalNum})		showToken("INTEGER");
 
-{digit}+          			showToken("number");
-{letter}+					showToken("word");
-{letter}+@{letter}+\.com		showToken("email address");
+
+
+
+
 {whitespace}                     ;
 .		printf("Lex doesn't know what that is!\n");
 
@@ -53,7 +61,11 @@ endofline       (\x0D|\x0D\x0A|\x0A)
 
 void showToken(char * name)
 {
-	
-        /* printf("Lex found a %s, the lexeme is %s and its length is %d\n", name, yytext, yyleng); */
-		printf("%d %s %s\n", yylineno, name, yytext);
+	if(strcmp(name,"INTEGER")==0) {
+		if(yytext[0]=='+') {
+			yytext=yytext++;			
+		}
+	}
+    /* printf("Lex found a %s, the lexeme is %s and its length is %d\n", name, yytext, yyleng); */
+	printf("%d %s %s\n", yylineno, name, yytext);
 }
