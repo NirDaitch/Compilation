@@ -3,7 +3,10 @@
 /* Declarations section */
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
 void showToken(char *);
+void showTokenInt(char *);
 
 %}
 
@@ -32,9 +35,10 @@ string2			("")
 
 
 
+
 %%
 
-
+(aaa)	showTokenInt("INTEGER");
 (---)		showToken("STARTSTRUCT");
 (\.\.\.)		showToken("ENDSTRUCT");
 
@@ -61,13 +65,13 @@ string2			("")
 
 
 
-{integer}   			showToken("int");		
-{hexaNum}				showToken("hex");
-{octalNum}				showToken("oct");
+{integer}   			showTokenInt("INTEGER");		
+{hexaNum}				showTokenInt("INTEGER");
+{octalNum}				showTokenInt("oct");
 
 ({decimal}|{decimal}{exp}|\.inf|\.NaN)		showToken("REAL");
 
-({string})			showToken("STRING");
+({string1})			showToken("STRING");
 
 
 
@@ -79,30 +83,8 @@ string2			("")
 
 void showToken(char * name)
 {
-	char *tmp=name;
-	if(strcmp(tmp,"int")==0 || strcmp(tmp,"hex")==0 || strcmp(tmp,"oct")==0) {
-		name="INTEGER";
-	}
-
-	if(strcmp(name,"INTEGER")==0) {
-		if(yytext[0]=='+') {
-			yytext=yytext++;			
-		}			
-	}
 	
 	
-	
-	if(strcmp(tmp,"int")==0 ) {
-		//removing leading zeros
-		if(strlen(yytext)<=1) {
-
-		}
-		else {
-			while(yytext[0]=='0' && yytext[1]!='\0') {
-				yytext++;
-			}
-		}
-	}
 
 
 
@@ -111,6 +93,23 @@ void showToken(char * name)
 
 
     /* printf("Lex found a %s, the lexeme is %s and its length is %d\n", name, yytext, yyleng); */
-	printf("%d %s %s\n", yylineno, name, yytext);
+	printf("%d %s %s\n", yylineno, name, yytext);	
+}
+
+void showTokenInt(char *name) {
+	char *end;
+	long ans=strtol(yytext,&end,0);
+	char *tmp=name;
+	if(strcmp(name,"oct")==0) {
+		name="INTEGER";
+		if(yyleng>1) {
+			char str[yyleng+1];
+			strcpy(str,yytext);
+			str[1]='0';
+			ans=strtol(&(str[1]),&end,0);
+		}
+	}	
+	printf("%d %s %ld\n",yylineno,name,ans);
+	
 	
 }
