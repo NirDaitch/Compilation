@@ -12,12 +12,13 @@ void showTokenInt(char *);
 
 %option yylineno
 %option noyywrap
+%Start Comment
 
 
 digit   		([0-9])
 letter  		([a-zA-Z])
 whitespace		([\t\n ])
-endofline       (\x0D|\x0D\x0A|\x0A)
+
 plusorminus 	([+-])
 integer 		({plusorminus}?{digit}+)
 hexaNum			(0x[0-9a-fA-F]+)
@@ -38,7 +39,7 @@ string2			("")
 
 %%
 
-(aaa)	showTokenInt("INTEGER");
+
 (---)		showToken("STARTSTRUCT");
 (\.\.\.)		showToken("ENDSTRUCT");
 
@@ -58,7 +59,8 @@ string2			("")
 (!!{letter}+)			showToken("TYPE");
 
 
-(#[^{endofline}]*{endofline})		{showToken("COMMENT");}
+(\#[^\0\n\r(\r\n)]*[\0\n\r(\r\n)])    showToken("COMMENT");
+
 
 (true)			showToken("TRUE");
 (false)			showToken("FALSE");
@@ -83,15 +85,11 @@ string2			("")
 
 void showToken(char * name)
 {
-	
-	
-
-
-
-
-
-
-
+	if (strcmp(name,"COMMENT")==0)
+	{
+		printf("%d %s %s", yylineno, name, yytext);	
+		return;
+	}
     /* printf("Lex found a %s, the lexeme is %s and its length is %d\n", name, yytext, yyleng); */
 	printf("%d %s %s\n", yylineno, name, yytext);	
 }
@@ -108,7 +106,7 @@ void showTokenInt(char *name) {
 			str[1]='0';
 			ans=strtol(&(str[1]),&end,0);
 		}
-	}	
+	}
 	printf("%d %s %ld\n",yylineno,name,ans);
 	
 	
