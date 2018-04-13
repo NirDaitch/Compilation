@@ -31,8 +31,12 @@ exp				(e{integer})
 
 
 validEscape 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
+
+
+validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
+
 string1 		('[^']*')
-string2			("")    
+string2			(\"[{validEscape}{digit}{letter}]*\")    
 
 
 
@@ -74,8 +78,7 @@ string2			("")
 ({decimal}|{decimal}{exp}|\.inf|\.NaN)		showToken("REAL");
 
 ({string1})			showToken("STRING");
-
-
+(\"(\\\\|\\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F]|[a-zA-Z ])*\")			showToken("STRING");
 
 
 {whitespace}                     ;
