@@ -14,7 +14,7 @@ void showError();
 
 %option yylineno
 %option noyywrap
-%Start Comment
+
 
 
 digit   		([0-9])
@@ -73,19 +73,19 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 {hexaNum}				showTokenInt("INTEGER");
 {octalNum}				showTokenInt("oct");
 
-({decimal}|{decimal}{exp}|\.inf|\.NaN)		showToken("REAL");
+({decimal}|{decimal}e[+-]{integer}|\.inf|\.NaN)		showToken("REAL");
 
 \'([^\\\'])*\'		                                  showToken("STRING");
 
-\"([^\\"]|\\\\|\\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])*\"                   showToken("STRING");
+\"([^\\\"]|\\\\|\\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])*\"                   showToken("STRING");
 
 
 
 {letter}({letter}|{digit})*                       showToken("VAL");
 
-\&({letter})*                       showToken("DECLARATION");
+\&({letter})+                       showToken("DECLARATION");
 
-\*({letter})*                       showToken("DEREFERENCE");
+\*({letter})+                       showToken("DEREFERENCE");
 
 
 <<EOF>>                     showToken("EOF");exit(0);
