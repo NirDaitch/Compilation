@@ -36,10 +36,6 @@ validEscape 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 
 validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 
-string1 		('[^']*')
-string2			(\"[{validEscape}{digit}{letter}]*\")    
-
-
 
 
 %%
@@ -78,7 +74,7 @@ string2			(\"[{validEscape}{digit}{letter}]*\")
 
 ({decimal}|{decimal}{exp}|\.inf|\.NaN)		showToken("REAL");
 
-({string1})			                                  showToken("STRING");
+\'([^\\\'])*\'		                                  showToken("STRING");
 
 \"([^\\"]|\\\\|\\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])*\"                   showToken("STRING");
 
@@ -90,7 +86,7 @@ string2			(\"[{validEscape}{digit}{letter}]*\")
 
 void showToken(char * name)
 {
-	if (strcmp(name,"COMMENT")==0)
+	if (strcmp(name,"COMMENT")==0 || strcmp(name,"STRING")==0)
 	{
 		printf("%d %s %s", yylineno, name, yytext);	
 		return;
