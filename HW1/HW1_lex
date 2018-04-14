@@ -9,6 +9,7 @@ void showToken(char *);
 void showTokenInt(char *);
 void showError();
 
+
 %}
 
 %option yylineno
@@ -78,9 +79,16 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 
 \"([^\\"]|\\\\|\\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])*\"                   showToken("STRING");
 
+
+
 {letter}({letter}|{digit})*                       showToken("VAL");
 
+\&({letter})*                       showToken("DECLARATION");
 
+\*({letter})*                       showToken("DEREFERENCE");
+
+
+<<EOF>>                     showToken("EOF");
 
 .		showError();exit(0);
 
