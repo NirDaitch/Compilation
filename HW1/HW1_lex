@@ -80,12 +80,9 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 
 
 
-\'([\x20-\x26]|[\x28-\x7E])*\'		                                  handleString1("STRING");
+\'([\x20-\x26\x28-\x7E\x0D\x0A]|\x0D\x0A)*\'		                                  handleString1("STRING");
 
-\"([\x20-\x21]|[\x22-\x7E])*\"           					          handleString2("STRING");
-
-
-
+\"([\x20-\x21\x23-\x7E\x0D\x0A]|\x0D\x0A)*\"           					          handleString2("STRING");
 
 
 {letter}({letter}|{digit})*                       showToken("VAL");
