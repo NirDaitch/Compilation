@@ -88,7 +88,9 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 \*({letter})*                       showToken("DEREFERENCE");
 
 
-<<EOF>>                     showToken("EOF");
+<<EOF>>                     showToken("EOF");exit(0);
+
+{whitespace}                ;
 
 .		showError();exit(0);
 
