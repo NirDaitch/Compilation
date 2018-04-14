@@ -7,6 +7,7 @@
 
 void showToken(char *);
 void showTokenInt(char *);
+void showError();
 
 %}
 
@@ -77,12 +78,13 @@ string2			(\"[{validEscape}{digit}{letter}]*\")
 
 ({decimal}|{decimal}{exp}|\.inf|\.NaN)		showToken("REAL");
 
-({string1})			showToken("STRING");
-(\"(\\\\|\\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F]|[a-zA-Z ])*\")			showToken("STRING");
+({string1})			                                  showToken("STRING");
+
+\"([^\\"]|\\\\|\\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])*\"                   showToken("STRING");
 
 
-{whitespace}                     ;
-.		printf("Lex doesn't know what that is!\n");
+
+.		showError();exit(0);
 
 %%
 
@@ -112,5 +114,8 @@ void showTokenInt(char *name) {
 	}
 	printf("%d %s %ld\n",yylineno,name,ans);
 	
-	
+}
+
+void showError() {
+	printf("Error %s\n", yytext);
 }
