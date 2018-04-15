@@ -266,6 +266,7 @@ void handleString2(char *name)
 				//j++
 				//tmp++;
 				//tmp++;
+				//tmp++;
 				//FUCK ME
 				
 				//and last TODO from faq-unrelated to this section- if string has invalid escape and also string didn't close (got EOF), print invalid escape instead of unclosed string.
