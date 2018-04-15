@@ -9,8 +9,11 @@ void showToken(char *);
 void showTokenInt(char *);
 void showError();
 void handleString1(char *);
+void initHandleString();
 void handleString2(char *);
-
+void pushToString(char*);
+char cCurrentString[1050];
+int iCurrentStringIndex = 0;
 
 %}
 
@@ -18,6 +21,9 @@ void handleString2(char *);
 %option noyywrap
 
 %x STRING
+
+
+
 
 digit   		([0-9])
 letter  		([a-zA-Z])
@@ -78,18 +84,18 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 ({decimal}|{decimal}e[+-]{integer}|\.inf|\.NaN)		showToken("REAL");
 
 
-\'([\x20-\x26\x28-\x7E\x0D\x0A]|\x0D\x0A)*\'		                                  handleString1("STRING");
+\'([\x20-\x26\x28-\x7E\x0D\x0A]|\x0D\x0A)*\'	  handleString1("STRING");
 
 
 \"\"                                printf("%d %s\n",yylineno, "STRING");
 
-"\""									printf("begin string\n"); BEGIN(STRING);
-<STRING>[^\\\"]*                  		 printf("inside string 1\n");
-<STRING>(\\\")*                   			printf("inside string 2\n");
-<STRING>(\\\\)*                 	  printf("inside string 3\n");
-<STRING>(\\[^\"\\])*                 	  printf("inside string 4\n");
-<STRING><<EOF>>                        printf("Error unclosed string\n");exit(0);
-<STRING>"\""                            printf("end string\n"); BEGIN(INITIAL);
+"\""								      BEGIN(STRING); initHandleString();
+<STRING>[^\\\"]*                  		  pushToString(yytext);
+<STRING>(\\\")*                   		  pushToString(yytext);
+<STRING>(\\\\)*                 	      pushToString(yytext);
+<STRING>(\\[^\"\\])*                 	  pushToString(yytext);
+<STRING><<EOF>>                           printf("Error unclosed string\n");exit(0);
+<STRING>"\""                              handleString2("STRING"); BEGIN(INITIAL);
 
 
 {letter}({letter}|{digit})*                       showToken("VAL");
@@ -147,37 +153,26 @@ void handleString1(char *name) {
 	str[yyleng-2]='\0';
 	printf("%d %s %s\n",yylineno,name,str);
 }
-void handleString2(char *name) {
-	//char str[yyleng+1]; 
-	////trimming starting and trailing quotation
-	//yytext++;
-	//strcpy(str,yytext);
-	//str[yyleng-2]='\0';
-	//here: if yytext= "abcd22" then str is abcd22
 
-	//char *tmp = yytext;
-	//
-	//while (*tmp != '\0')
-	//{
-	//	if (*tmp == '\\')
-	//	{
-	//		tmp++;
-	//		if (*tmp == '"')
-	//		{
-	//			tmp++;
-	//			if (*tmp == '\0')
-	//			{
-	//				printf("Error unclosed string\n");exit(0);
-	//			}
-	//		}
-	//		
-	//		if (*tmp != '\\' && *tmp != 'a' && *tmp != 'b' && *tmp != 'e')
-	//		{
-	//			printf("Error undefined escape sequence %c\n", *tmp);exit(0);
-	//		}
-	//	}
-	//	tmp++;
-	//}
+void initHandleString()
+{
+	int iCurrentStringIndex = 0;
+	int i = 0;
+    while(cCurrentString[i] != '\0') {
+        cCurrentString[i] = '\0';
+        i++;
+    }
+}
+
+void pushToString(char* sText)
+{
+	strcat(cCurrentString, sText);
+}
+
+void handleString2(char *name) 
+{
+
+	
 	
 	//TODO:go over str and check if there is escape with invalid char, if yes print msg and exit
 	//TODO: if not, replace all valid escapes with their value, as well as \xdd with its value
@@ -188,7 +183,7 @@ void handleString2(char *name) {
 
 
 	//printf("%d %s %s\n",yylineno,name,str);
-	printf("%d %s %s\n",yylineno,name,yytext);
+	printf("%d %s %s\n",yylineno,name,cCurrentString);
 
 }
 
