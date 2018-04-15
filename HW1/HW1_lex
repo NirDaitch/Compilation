@@ -78,11 +78,9 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 ({decimal}|{decimal}e[+-]{integer}|\.inf|\.NaN)		showToken("REAL");
 
 
-
-
 \'([\x20-\x26\x28-\x7E\x0D\x0A]|\x0D\x0A)*\'		                                  handleString1("STRING");
 
-\"([\x20-\x21\x23-\x7E\x0D\x0A]|\x0D\x0A|\\\")*\"           					          handleString2("STRING");
+\"(\\\"|[\x20-\x21\x23-\x7E\x0D\x0A]|\x0D\x0A)*\"           					          handleString2("STRING");
 
 
 {letter}({letter}|{digit})*                       showToken("VAL");
@@ -148,6 +146,30 @@ void handleString2(char *name) {
 	str[yyleng-2]='\0';
 	//here: if yytext= "abcd22" then str is abcd22
 
+	char *tmp = yytext;
+	
+	while (*tmp != '\0')
+	{
+		if (*tmp == '\\')
+		{
+			tmp++;
+			if (*tmp == '"')
+			{
+				tmp++;
+				if (*tmp == '\0')
+				{
+					printf("Error unclosed string\n");exit(0);
+				}
+			}
+			
+			if (*tmp != '\\' && *tmp != 'a' && *tmp != 'b' && *tmp != 'e')
+			{
+				printf("Error undefined escape sequence %c\n", *tmp);exit(0);
+			}
+		}
+		tmp++;
+	}
+	
 	//TODO:go over str and check if there is escape with invalid char, if yes print msg and exit
 	//TODO: if not, replace all valid escapes with their value, as well as \xdd with its value
 
