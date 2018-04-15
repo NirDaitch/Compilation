@@ -12,8 +12,9 @@ void handleString1(char *);
 void initHandleString();
 void handleString2(char *);
 void pushToString(char*);
+void initStr666(char *,int);
 char cCurrentString[1050];
-int iCurrentStringIndex = 0;
+
 
 %}
 
@@ -156,7 +157,7 @@ void handleString1(char *name) {
 
 void initHandleString()
 {
-	int iCurrentStringIndex = 0;
+	
 	int i = 0;
     while(cCurrentString[i] != '\0') {
         cCurrentString[i] = '\0';
@@ -171,22 +172,121 @@ void pushToString(char* sText)
 
 void handleString2(char *name) 
 {
+	char val;
+	char val2;
+	char val3;
+	char val4;
+	int i=0;
+	int length=strlen(cCurrentString);
+	for(;i<length;i++) {//check valid chars
+		val=cCurrentString[i];
+		if( (val>='\x20' && val<='\x7E' ) || (val=='\x09') || (val=='\x0A') || (val=='\x0D')){
+			//ok
+		}
+		else {
+			showError();exit(0);
+		}
 
-	
-	
-	//TODO:go over str and check if there is escape with invalid char, if yes print msg and exit
-	//TODO: if not, replace all valid escapes with their value, as well as \xdd with its value
+	}
+	i=0;
+	for(;i<length-1;i++) {//check valid escapes without \xDD
+		val=cCurrentString[i];
+		val2=cCurrentString[i+1];
+		if(val=='\\') {
+			if( !(val2=='\\' || val2== '\"' || val2=='a' || val2=='b' || val2=='e' || val2=='f' || val2=='n' || val2=='r' || val2=='t' || val2=='v' || val2=='0' || val2=='x') ) {
+				printf("Error undefined escape sequence %c\n",val2);
+				exit(0);
+			}
+		}
+	}
+	i=0;
+	for(;i<length-3;i++) {//checking if there is \x in valid format - \xDD
+		val=cCurrentString[i];
+		val2=cCurrentString[i+1];
+		val3=cCurrentString[i+2];
+		val4=cCurrentString[i+3];
+		if(val=='\\' && val2=='x') {
+			if ( ( (val3>='0' && val3<='9') || (val3>='a' && val3<='f') || (val3>='A' && val3<='F') ) &&
+			 ( (val4>='0' && val4<='9') || (val4>='a' && val4<='f') || (val4>='A' && val4<='F') ) )  
+			{
+				//printf("hurray! %c%c%c%c\n",val,val2,val3,val4);
+			} 
+			else {
+				printf("Error undefined escape sequence %c\n",val2);
+				exit(0);
+			}
+		}	
+	}
+	//here the string is valid, now we need to replace the characters	
+	char str[1060];
+	initStr666(str,1060);
+	int j=0;
+	char *tmp=cCurrentString;
+	if(*(tmp+1)=='\0') {//string is of size 1, replace cr,lf, with space and finish (no other replacements possible)
+		if(*tmp=='\x0D' || *tmp=='\x0A') {
+			str[0]=' ';
+		}
+	}
+	while(*tmp!='\0') {//string is at least of size 2
+		if(*tmp=='\x0D' || *tmp=='\x0A') {//handle CR,LF,CRLF
+			str[j]=' ';
+			if(*tmp=='\x0D' && *(tmp+1)=='\x0A') {
+				//CRLF
+				tmp++;
+			}
+			tmp++;
+			j++;
+			continue;
+		}
+		if(*tmp!='\\') {
+			str[j]=*tmp;
+			j++;
+			tmp++;
+			continue;
+		}
+		else {
+			tmp++;
+			if(*tmp=='\\') {str[j]='\\';j++;tmp++;}
+			else if (*tmp== '\"'){ str[j]='\"';j++;tmp++;}
+			else if (*tmp== 'a') { str[j]='\a';j++;tmp++;}
+			else if (*tmp== 'b') { str[j]='\b';j++;tmp++;}
+			else if (*tmp== 'e') { str[j]='\e';j++;tmp++;}
+			else if (*tmp== 'f') { str[j]='\f';j++;tmp++;}
+			else if (*tmp== 'n') { str[j]='\n';j++;tmp++;}
+			else if (*tmp== 'r') { str[j]='\r';j++;tmp++;}
+			else if (*tmp== 't') { str[j]='\t';j++;tmp++;}
+			else if (*tmp== 'v') { str[j]='\v';j++;tmp++;}
+			else if (*tmp== '0') { str[j]='\0';j++;tmp++; break;}
+			else if (*tmp== 'x') {
+				val3=*(tmp+1);
+				val4=*(tmp+2);
+				//at this point, we encountered \xDD where DD are valid characters. 
+				//we need to write \xDD into str[j]
+				//str[j]='\xval3val4'; TODO:figure how we can swap val3val4 for their characters and insert it into str -----> '\xval3val4'
+				//j++
+				//tmp++;
+				//tmp++;
+				//FUCK ME
+				
+				//and last TODO from faq-unrelated to this section- if string has invalid escape and also string didn't close (got EOF), print invalid escape instead of unclosed string.
+				//meaning we have to make a new function and call it instead of instantly writing error unclosed string. this func will duplicate the code checking for valid escape.
+				//if not valid, print invalid escape. else print unclosed string.
+			}
 
+			
 
-
-//////////////////// \"[^\"]*					printf("Error unclosed string\n");exit(0);
-
-
-	//printf("%d %s %s\n",yylineno,name,str);
-	printf("%d %s %s\n",yylineno,name,cCurrentString);
+		}
+	}	
+	printf("%d %s %s\n",yylineno,name,str);
 
 }
 
 void showError() {
 	printf("Error %s\n", yytext);
+}
+void initStr666(char *str,int len) {
+	int i=0;
+	for(;i<len;i++) {
+		str[i]='\0';
+	}	
 }
