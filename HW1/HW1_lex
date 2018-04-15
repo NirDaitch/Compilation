@@ -17,7 +17,7 @@ void handleString2(char *);
 %option yylineno
 %option noyywrap
 
-
+%x STRING
 
 digit   		([0-9])
 letter  		([a-zA-Z])
@@ -80,7 +80,16 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 
 \'([\x20-\x26\x28-\x7E\x0D\x0A]|\x0D\x0A)*\'		                                  handleString1("STRING");
 
-\"(\\\"|[\x20-\x21\x23-\x7E\x0D\x0A]|\x0D\x0A)*\"           					          handleString2("STRING");
+
+\"\"                                printf("%d %s\n",yylineno, "STRING");
+
+"\""									printf("begin string\n"); BEGIN(STRING);
+<STRING>[^\\\"]*                  		 printf("inside string 1\n");
+<STRING>(\\\")*                   			printf("inside string 2\n");
+<STRING>(\\\\)*                 	  printf("inside string 3\n");
+<STRING>(\\[^\"\\])*                 	  printf("inside string 4\n");
+<STRING><<EOF>>                        printf("Error unclosed string\n");exit(0);
+<STRING>"\""                            printf("end string\n"); BEGIN(INITIAL);
 
 
 {letter}({letter}|{digit})*                       showToken("VAL");
@@ -90,7 +99,7 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 \*({letter})+                       showToken("DEREFERENCE");
 
 \'[^\']*					printf("Error unclosed string\n");exit(0);
-\"[^\"]*					printf("Error unclosed string\n");exit(0);
+
 
 <<EOF>>                     showToken("EOF");exit(0);
 
@@ -139,46 +148,47 @@ void handleString1(char *name) {
 	printf("%d %s %s\n",yylineno,name,str);
 }
 void handleString2(char *name) {
-	char str[yyleng+1]; 
-	//trimming starting and trailing quotation
-	yytext++;
-	strcpy(str,yytext);
-	str[yyleng-2]='\0';
+	//char str[yyleng+1]; 
+	////trimming starting and trailing quotation
+	//yytext++;
+	//strcpy(str,yytext);
+	//str[yyleng-2]='\0';
 	//here: if yytext= "abcd22" then str is abcd22
 
-	char *tmp = yytext;
-	
-	while (*tmp != '\0')
-	{
-		if (*tmp == '\\')
-		{
-			tmp++;
-			if (*tmp == '"')
-			{
-				tmp++;
-				if (*tmp == '\0')
-				{
-					printf("Error unclosed string\n");exit(0);
-				}
-			}
-			
-			if (*tmp != '\\' && *tmp != 'a' && *tmp != 'b' && *tmp != 'e')
-			{
-				printf("Error undefined escape sequence %c\n", *tmp);exit(0);
-			}
-		}
-		tmp++;
-	}
+	//char *tmp = yytext;
+	//
+	//while (*tmp != '\0')
+	//{
+	//	if (*tmp == '\\')
+	//	{
+	//		tmp++;
+	//		if (*tmp == '"')
+	//		{
+	//			tmp++;
+	//			if (*tmp == '\0')
+	//			{
+	//				printf("Error unclosed string\n");exit(0);
+	//			}
+	//		}
+	//		
+	//		if (*tmp != '\\' && *tmp != 'a' && *tmp != 'b' && *tmp != 'e')
+	//		{
+	//			printf("Error undefined escape sequence %c\n", *tmp);exit(0);
+	//		}
+	//	}
+	//	tmp++;
+	//}
 	
 	//TODO:go over str and check if there is escape with invalid char, if yes print msg and exit
 	//TODO: if not, replace all valid escapes with their value, as well as \xdd with its value
 
 
 
+//////////////////// \"[^\"]*					printf("Error unclosed string\n");exit(0);
 
 
-
-	printf("%d %s %s\n",yylineno,name,str);
+	//printf("%d %s %s\n",yylineno,name,str);
+	printf("%d %s %s\n",yylineno,name,yytext);
 
 }
 
