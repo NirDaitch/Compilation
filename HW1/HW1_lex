@@ -71,9 +71,11 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 
 
 
-\#                                          BEGIN(COMMENT); initHandleString();
-<COMMENT>[^\x0D\x0A(\x0D\x0A)]              pushToString(yytext);
-<COMMENT>[\x0D\x0A(\x0D\x0A)]              printf("%d %s %s\n",yylineno,"COMMENT",cCurrentString); BEGIN(INITIAL);
+\#                                          BEGIN(COMMENT); initHandleString(); pushToString(yytext);
+<COMMENT>[^\x0D\x0A]              pushToString(yytext);
+<COMMENT>^(\x0D\x0A)              pushToString(yytext);
+<COMMENT>[\x0D\x0A]              printf("%d %s %s\n",yylineno,"COMMENT",cCurrentString); BEGIN(INITIAL);
+<COMMENT>\x0D\x0A             printf("%d %s %s\n",yylineno,"COMMENT",cCurrentString); BEGIN(INITIAL);
 <COMMENT><<EOF>>                           printf("%d %s %s\n",yylineno,"COMMENT",cCurrentString); BEGIN(INITIAL);
 
 
@@ -97,10 +99,10 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 \"\"                                printf("%d %s\n",yylineno, "STRING");
 
 "\""								      BEGIN(STRING); initHandleString();
-<STRING>[^\\\"]*                  		  pushToString(yytext);
-<STRING>(\\\")*                   		  pushToString(yytext);
-<STRING>(\\\\)*                 	      pushToString(yytext);
-<STRING>(\\[^\"\\])*                 	  pushToString(yytext);
+<STRING>[^\\\"]                  		  pushToString(yytext);
+<STRING>(\\\")                   		  pushToString(yytext);
+<STRING>(\\\\)	                 	      pushToString(yytext);
+<STRING>(\\[^\"\\])                 	  pushToString(yytext);
 <STRING><<EOF>>                           printf("Error unclosed string\n");exit(0);
 <STRING>"\""                              handleString2("STRING"); BEGIN(INITIAL);
 
