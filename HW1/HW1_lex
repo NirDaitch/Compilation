@@ -11,6 +11,7 @@ void showError();
 void handleString1(char *);
 void initHandleString();
 void handleString2(char *);
+void determineEscapeOrEOF();
 void pushToString(char*);
 void initStr666(char *,int);
 char cCurrentString[1050];
@@ -103,7 +104,7 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 <STRING>(\\\")                   		  pushToString(yytext);
 <STRING>(\\\\)	                 	      pushToString(yytext);
 <STRING>(\\[^\"\\])                 	  pushToString(yytext);
-<STRING><<EOF>>                           printf("Error unclosed string\n");exit(0);
+<STRING><<EOF>>                           determineEscapeOrEOF();
 <STRING>"\""                              handleString2("STRING"); BEGIN(INITIAL);
 
 
@@ -123,6 +124,48 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 .		showError();exit(0);
 
 %%
+
+void determineEscapeOrEOF()
+{
+	int i=0;
+	int length=strlen(cCurrentString);
+	char val, val2, val3, val4;
+	
+	for(;i<length-1;i++) {//check valid escapes without \xDD
+		val=cCurrentString[i];
+		val2=cCurrentString[i+1];
+		
+		if(val=='\\') {
+			if( !(val2=='\\' || val2== '\"' || val2=='a' || val2=='b' || val2=='e' || val2=='f' ||val2=='n' || val2=='r' || val2=='t' || val2=='v' || val2=='0' || val2=='x') ) {
+				printf("Error undefined escape sequence %c\n",val2);
+				exit(0);
+			}
+			else {
+				i++;
+			}
+		}
+	}
+	i=0;
+	for(;i<length-3;i++) {//checking if there is \x in valid format - \xDD
+		val=cCurrentString[i];
+		val2=cCurrentString[i+1];
+		val3=cCurrentString[i+2];
+		val4=cCurrentString[i+3];
+		if(val=='\\' && val2=='x') {
+			if ( ( (val3>='0' && val3<='9') || (val3>='a' && val3<='f') || (val3>='A' && val3<='F') ) &&
+			 ( (val4>='0' && val4<='9') || (val4>='a' && val4<='f') || (val4>='A' && val4<='F') ) )  
+			{
+				//printf("hurray! %c%c%c%c\n",val,val2,val3,val4);
+			} 
+			else {
+				printf("Error undefined escape sequence %c\n",val2);
+				exit(0);
+			}
+		}	
+	}
+	printf("Error unclosed string\n");
+	exit(0);
+}
 
 void showToken(char * name)
 {
