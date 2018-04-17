@@ -277,11 +277,30 @@ void handleString2(char *name)
 				//at this point, we encountered \xDD where DD are valid characters. 
 				//we need to write \xDD into str[j]
 				//str[j]='\xval3val4'; TODO:figure how we can swap val3val4 for their characters and insert it into str -----> '\xval3val4'
-				//j++
-				//tmp++;
-				//tmp++;
-				//tmp++;
+
 				//FUCK ME
+
+				char tmpSTR[5];
+				initStr666(tmpSTR, 5);
+				char sZeroX[] = "0x";
+				strcat(tmpSTR, sZeroX);
+				tmpSTR[2]=val3;
+				tmpSTR[3]=val4;
+				
+				//printf("tmpSTR is: %s\n", tmpSTR);
+				
+
+				char *end;
+				long ans=strtol(tmpSTR ,&end, 0);
+				///printf("ans is: %ld \n", ans);
+				char cCharFromHexa = (char) ans;
+				///printf("cCharFromHexa is: %c \n", cCharFromHexa);
+				str[j] = cCharFromHexa;
+				
+				j++;
+				tmp++;
+				tmp++;
+				tmp++;
 				
 				//and last TODO from faq-unrelated to this section- if string has invalid escape and also string didn't close (got EOF), print invalid escape instead of unclosed string.
 				//meaning we have to make a new function and call it instead of instantly writing error unclosed string. this func will duplicate the code checking for valid escape.
