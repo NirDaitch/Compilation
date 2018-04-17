@@ -22,13 +22,13 @@ char cCurrentString[1050];
 %option noyywrap
 
 %x STRING
-
+%x COMMENT
 
 
 
 digit   		([0-9])
 letter  		([a-zA-Z])
-whitespace		([\t\n ])
+whitespace		([\t\n \x0D\x0A])
 
 plusorminus 	([+-])
 integer 		({plusorminus}?{digit}+)
@@ -70,7 +70,13 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 (!!{letter}+)			showToken("TYPE");
 
 
-(\#[^\0\n\r(\r\n)]*[\0\n\r(\r\n)])    showToken("COMMENT");
+
+\#                                          BEGIN(COMMENT); initHandleString();
+<COMMENT>[^\x0D\x0A(\x0D\x0A)]              pushToString(yytext);
+<COMMENT>[\x0D\x0A(\x0D\x0A)]              printf("%d %s %s\n",yylineno,"COMMENT",cCurrentString); BEGIN(INITIAL);
+<COMMENT><<EOF>>                           printf("%d %s %s\n",yylineno,"COMMENT",cCurrentString); BEGIN(INITIAL);
+
+
 
 
 (true)			showToken("TRUE");
@@ -229,9 +235,11 @@ void handleString2(char *name)
 	}
 	while(*tmp!='\0') {//string is at least of size 2
 		if(*tmp=='\x0D' || *tmp=='\x0A') {//handle CR,LF,CRLF
+			//printf("found CR or LF");
 			str[j]=' ';
 			if(*tmp=='\x0D' && *(tmp+1)=='\x0A') {
 				//CRLF
+				
 				tmp++;
 			}
 			tmp++;
