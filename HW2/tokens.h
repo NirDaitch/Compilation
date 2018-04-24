@@ -1,0 +1,30 @@
+#ifndef __TOKENS__
+#define __TOKENS__
+
+
+enum tokens {
+	STARTSTRUCT = 11,
+	ENDSTRUCT,	
+	LLIST,
+	RLIST,
+	LDICT,
+	RDICT,
+	KEY,
+	COMPLEXKEY,
+	ITEM,
+	COMMA,
+	TYPE,
+	TRUE,
+	FALSE,
+	INTEGER,
+	REAL,
+	STRING,
+	VAL,
+	DECLARATION,
+	DEREFERENCE,
+	EF
+};
+
+
+
+#endif //__TOKENS__
