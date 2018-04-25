@@ -1,0 +1,6 @@
+1 STRING a
+b	c
+2 STRING a\nb\tc
+3 REAL 3.5e+3
+4 INTEGER 31
+Error |

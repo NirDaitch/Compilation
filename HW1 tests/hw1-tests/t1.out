@@ -1,0 +1,16 @@
+1 LLIST [
+1 VAL abc
+1 COMMA ,
+1 VAL def
+1 COMMA ,
+1 RLIST ]
+2 LDICT {
+3 VAL x
+3 KEY :
+3 INTEGER 1
+4 RDICT }
+5 VAL y
+5 KEY :
+5 REAL 3.2
+6 COMMENT # hello
+6 EOF 

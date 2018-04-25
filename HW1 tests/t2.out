@@ -1,0 +1,72 @@
+1 STARTSTRUCT ---
+2 ENDSTRUCT ...
+3 LLIST [
+4 RLIST ]
+5 LDICT {
+6 RDICT }
+7 KEY :
+8 COMPLEXKEY ?
+9 ITEM -
+10 COMMA ,
+11 TYPE !!bla
+12 TYPE !!A
+13 INTEGER 123456
+14 COMMENT #a comment with spaces		tabs and stuff 103 .536 "asdasd" lala 'sasdqwr'
+14 TRUE true
+14 FALSE false
+14 VAL tarue
+14 VAL falase
+15 INTEGER 123231
+15 INTEGER 123231
+15 INTEGER -123231
+15 INTEGER 65489
+15 INTEGER 305547999
+15 INTEGER 291
+15 VAL SZXC
+15 INTEGER 1
+15 VAL yuiol
+15 INTEGER 83
+15 INTEGER 0
+15 VAL o8989
+15 INTEGER 90
+15 VAL abcef
+15 INTEGER 1
+15 VAL zxca
+16 INTEGER 11197951
+17 REAL 1.5e+3
+17 REAL .123e-55
+17 REAL 1.5
+17 VAL e3
+17 REAL 1.5e+3
+17 REAL .0
+18 REAL .inf
+18 REAL .NaN
+19 STRING regular string with
+19 STRING  and another with \n \r\xaf \a\b and some tabs 		
+23 STRING some long string with newlines and escaped tabs 			 and some actual tabs 		done
+24 STRING look! this is a string with a #comment in it that should not be detected
+25 STRING some x escapes	A B j k
+26 STRING all the escapes: " \     
+  	   lalala
+28 INTEGER 1
+28 VAL badValBecauseStartsWithInt
+28 VAL agoodval
+28 VAL aGoodVal3
+28 VAL then35GoodVals
+30 DECLARATION &somedecl
+30 DECLARATION &CAPITALDECL
+30 DECLARATION &mixedDECL
+30 DECLARATION &decl
+30 INTEGER 1
+30 DECLARATION &de
+30 INTEGER 1
+30 VAL cl
+31 DEREFERENCE *somederef
+31 DEREFERENCE *CAPITALDEREF
+31 DEREFERENCE *mixedDEREF
+31 DEREFERENCE *deref
+31 INTEGER 1
+31 DEREFERENCE *de
+31 INTEGER 1
+31 VAL ref
+Error '

@@ -1,0 +1,37 @@
+---
+...
+[
+]
+{
+}
+:
+?
+-
+,
+!!bla
+!!A
+123456 #a comment with spaces		tabs and stuff 103 .536 "asdasd" lala 'sasdqwr'
+true false tarue falase
+123231 +123231 -123231 65489 0x12364adf 0x123SZXC 0x01yuiol 0o123 0o8989 0o132abcef 0o01zxca
+0xaAdDfF
+1.5e+3 .123e-55  1.5e3 1.5e+3.0
+.inf .NaN
+'regular string with' ' and another with \n \r\xaf \a\b and some tabs 		'
+
+
+"some long string
+with newlines and escaped tabs \t\t\t and some actual tabs 		done"
+"look! this is a string with a #comment in it that should not be detected"
+"some x escapes	\x41 \x42 \x6A \x6b"
+"all the escapes: \" \\ \a \b \e \f \n \r \t \v \0 lalala"
+
+1badValBecauseStartsWithInt agoodval aGoodVal3 then35GoodVals
+
+&somedecl &CAPITALDECL &mixedDECL &decl1 &de1cl
+*somederef *CAPITALDEREF *mixedDEREF *deref1 *de1ref
+
+
+'invalid string
+because newline'
+
+
