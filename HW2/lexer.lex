@@ -1,11 +1,12 @@
 %{
 
 /* Declarations section */
+#include "tokens.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 
-void showToken(char *);
+void showToken(int);
 void showTokenInt(char *);
 void showError();
 void handleString1(char *);
@@ -52,38 +53,38 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 %%
 
 
-(---)		showToken("STARTSTRUCT");
-(\.\.\.)		showToken("ENDSTRUCT");
+(---)			showToken(STARTSTRUCT);
+(\.\.\.)		showToken(ENDSTRUCT);
 
-(\[)			showToken("LLIST");
-(\])			showToken("RLIST");
+(\[)			showToken(LLIST);
+(\])			showToken(RLIST);
 
-(\{)			showToken("LDICT");
-(\})			showToken("RDICT");
+(\{)			showToken(LDICT);
+(\})			showToken(RDICT);
 
-(:)			showToken("KEY");
-(\?)			showToken("COMPLEXKEY");
+(:)			showToken(KEY);
+(\?)			showToken(COMPLEXKEY);
 
-(-)			showToken("ITEM");
+(-)			showToken(ITEM);
 
-(,)			showToken("COMMA");
+(,)			showToken(COMMA);
 
-(!!{letter}+)			showToken("TYPE");
+(!!{letter}+)			showToken(TYPE);
 
 
 
 \#                                          BEGIN(COMMENT); initHandleString(); pushToString(yytext);
 <COMMENT>[^\x0D\x0A]              pushToString(yytext);
 <COMMENT>^(\x0D\x0A)              pushToString(yytext);
-<COMMENT>[\x0D\x0A]              printf("%d %s %s\n",(yylineno - 1),"COMMENT",cCurrentString); BEGIN(INITIAL);
-<COMMENT>\x0D\x0A             printf("%d %s %s\n",(yylineno - 1),"COMMENT",cCurrentString); BEGIN(INITIAL);
-<COMMENT><<EOF>>                           printf("%d %s %s\n",yylineno,"COMMENT",cCurrentString); BEGIN(INITIAL);
+<COMMENT>[\x0D\x0A]               BEGIN(INITIAL);
+<COMMENT>\x0D\x0A              BEGIN(INITIAL);
+<COMMENT><<EOF>>                        BEGIN(INITIAL);
 
 
 
 
-(true)			showToken("TRUE");
-(false)			showToken("FALSE");
+(true)			showToken(TRUE);
+(false)			showToken(FALSE);
 
 
 
@@ -91,13 +92,13 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 {hexaNum}				showTokenInt("INTEGER");
 {octalNum}				showTokenInt("oct");
 
-({decimal}|{decimal}e[+-]{integer}|\.inf|\.NaN)		showToken("REAL");
+({decimal}|{decimal}e[+-]{integer}|\.inf|\.NaN)		showToken(REAL);
 
 
 \'([\x20-\x26\x28-\x7E\x0D\x0A\x09]|\x0D\x0A)*\'	  handleString1("STRING");
 
 
-\"\"                                printf("%d %s\n",yylineno, "STRING");
+\"\"                                printf("%d\n", STRING);
 
 "\""								      BEGIN(STRING); initHandleString();
 <STRING>[^\\\"]                  		  pushToString(yytext);
@@ -108,16 +109,16 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 <STRING>"\""                              handleString2("STRING"); BEGIN(INITIAL);
 
 
-{letter}({letter}|{digit})*                       showToken("VAL");
+{letter}({letter}|{digit})*                       showToken(VAL);
 
-\&({letter})+                       showToken("DECLARATION");
+\&({letter})+                       showToken(DECLARATION);
 
-\*({letter})+                       showToken("DEREFERENCE");
+\*({letter})+                       showToken(DEREFERENCE);
 
 \'[^\']*					printf("Error unclosed string\n");exit(0);
 
 
-<<EOF>>                     showToken("EOF");exit(0);
+<<EOF>>                     showToken(EOF);exit(0);
 
 {whitespace}                ;
 
@@ -167,17 +168,16 @@ void determineEscapeOrEOF()
 	exit(0);
 }
 
-void showToken(char * name)
+void showToken(int name)
 {
 	
-	if (strcmp(name,"COMMENT")==0)
+	if (name == COMMENT)
 	{
-		printf("%d %s %s", yylineno, name, yytext);	
+		//printf("%d %s %s", yylineno, name, yytext);	
 		return;
 	} 
 	
- 
-	printf("%d %s %s\n", yylineno, name, yytext);	
+	printf("%d\n", name);	
 }
 
 void showTokenInt(char *name) {
@@ -193,7 +193,7 @@ void showTokenInt(char *name) {
 			ans=strtol(&(str[1]),&end,0);
 		}
 	}
-	printf("%d %s %ld\n",yylineno,name,ans);
+	printf("%d\n", INTEGER);
 	
 }
 
@@ -203,7 +203,7 @@ void handleString1(char *name) {
 	yytext++;
 	strcpy(str,yytext);
 	str[yyleng-2]='\0';
-	printf("%d %s %s\n",yylineno,name,str);
+	printf("%d\n", STRING);
 }
 
 void initHandleString()
@@ -284,7 +284,7 @@ void handleString2(char *name)
 	}
 	while(*tmp!='\0') {//string is at least of size 2
 		if(*tmp=='\x0D' || *tmp=='\x0A') {//handle CR,LF,CRLF
-			//printf("found CR or LF");
+			//printf("found CR or LF);
 			str[j]=' ';
 			if(*tmp=='\x0D' && *(tmp+1)=='\x0A') {
 				//CRLF
@@ -354,7 +354,7 @@ void handleString2(char *name)
 
 		}
 	}	
-	printf("%d %s %s\n",yylineno,name,str);
+	printf("%d\n", STRING);
 
 }
 
