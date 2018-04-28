@@ -60,7 +60,7 @@ set<tokens> getFirst(vector<int> vecVaribales, vector<int> used)
 	{		
 		int iCurrentVar = *it;
 		
-		if (isTerminal(iCurrentVar) ) 
+		if (isTerminal(iCurrentVar)) 
 		{
 			//cout << "terminal found: " << iCurrentVar << endl;
 			finalSet.insert((tokens)iCurrentVar);			
@@ -75,18 +75,7 @@ set<tokens> getFirst(vector<int> vecVaribales, vector<int> used)
 				
 		//cout << "nonterminal found: " << iCurrentVar << endl;
 		
-		////////////
-		//for (vector< vector<int> >::const_iterator IT_1 = vecRules.begin(); IT_1 != vecRules.end(); ++IT_1)
-		//{
-		//	cout << "rule is: " << endl;
-		//	printVector(*IT_1);
-		//	cout << endl;
-		//}
-		//
-		//////////
-		
 
-		
 		for (vector< vector<int> >::const_iterator it2 = vecRules.begin(); it2 != vecRules.end(); ++it2)
 		{
 		
@@ -95,14 +84,6 @@ set<tokens> getFirst(vector<int> vecVaribales, vector<int> used)
 			
 			set<tokens> tmpSet = getFirst(*it2, used);
 			
-			/////////////
-			//
-			//for (std::set<tokens>::const_iterator IT_2 = tmpSet.begin(); IT_2 != tmpSet.end(); ++IT_2) {
-			//	cout << "token is: " << *IT_2 << endl;
-			//	
-			//}
-			//
-			/////////////
 			
 			finalSet.insert(tmpSet.begin(), tmpSet.end());
 			used.push_back(iCurrentVar);
@@ -112,6 +93,7 @@ set<tokens> getFirst(vector<int> vecVaribales, vector<int> used)
 			//	break;
 			//}
 		}
+		break;
 	}
 
 	return finalSet;
@@ -124,15 +106,19 @@ set<tokens> getFirst(vector<int> vecVaribales, vector<int> used)
  */
 void compute_first()
 {
-	vector<int> vecTmp;
-	vector<int> used;
-	vecTmp.push_back((int)S);
-    set<tokens> mySet = getFirst(vecTmp, used);
-	for (std::set<tokens>::const_iterator IT_2 = mySet.begin(); IT_2 != mySet.end(); ++IT_2) {
-		cout << "token is: " << *IT_2 << endl;
+	vector< set<tokens> > vec4Print;
+	
+	for (int i = 0; i < NONTERMINAL_ENUM_SIZE; ++i) {
+		vector<int> vecTmp;
+		vecTmp.push_back(i);
+		vector<int> used;
+		//cout << " i is " << i << endl;
+		set<tokens> setTmp = getFirst(vecTmp, used);
 		
+		vec4Print.push_back(setTmp);
 	}
-    //print_first();
+    
+    print_first(vec4Print);
 }
 
 /**
