@@ -222,24 +222,23 @@ void compute_follow()
 	//	printVector((*it).rhs);
 	//}
 	
-	set<tokens> setTmp = getFollow(Collection);
-	for (set<tokens>::const_iterator it = setTmp.begin(); it != setTmp.end(); ++it)
-	{
-		cout << "token: " << *it << endl;
-	}
-	
-	//vector< set<tokens> > vec4Print;
-	//
-	//for (int i = 0; i < NONTERMINAL_ENUM_SIZE; ++i) {		
-	//	vector<int> used;
-	//	//cout << " i is " << i << endl;
-	//	set<tokens> setTmp = getFollow_init(i);
-	//	
-	//	
-	//	vec4Print.push_back(setTmp);
+	//set<tokens> setTmp = getFollow(Collection);
+	//for (set<tokens>::const_iterator it = setTmp.begin(); it != setTmp.end(); ++it)
+	//{
+	//	cout << "token: " << *it << endl;
 	//}
-    //
-    //print_follow(vec4Print);	
+	
+	vector< set<tokens> > vec4Print;
+	
+	for (int i = 0; i < NONTERMINAL_ENUM_SIZE; ++i) {		
+		set<tokens> setTmp = getFollow_init(i);
+		set<tokens> setTmp2 = getFollow((nonterminal)i);
+		setTmp.insert(setTmp2.begin(), setTmp2.end());
+		
+		vec4Print.push_back(setTmp);
+	}
+    
+    print_follow(vec4Print);	
 	
 }
 
