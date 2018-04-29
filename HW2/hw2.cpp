@@ -17,11 +17,26 @@ void compute_nullable()
     print_nullable(answer);
 }
 
+bool isNullable(nonterminal nt)
+{
+	if (nt == SItems || nt == LItems || nt == MItems)
+	{
+		return true;
+	}
+	return false;
+}
+
 
 bool isTerminal(int var)
 {
 	return var >= 11;
 }
+
+bool contains(vector<int> vec, int var)
+{
+	return find(vec.begin(), vec.end(), var) != vec.end();
+}	
+
 
 void printVector(vector<int> vec)
 {
@@ -48,10 +63,17 @@ vector< vector<int> > getRules(nonterminal nt) {
     return rules;
 }
 
-bool contains(vector<int> vec, int var)
-{
-	return find(vec.begin(), vec.end(), var) != vec.end();
-}	
+vector< grammar_rule > getContainingRules(nonterminal nt) {
+    vector< grammar_rule > rules;
+    for (int i = 0; i < grammar.size() ; ++i) {
+        grammar_rule tmp=grammar[i];
+        if (contains(tmp.rhs, nt))
+        {
+            rules.push_back(tmp);
+        }
+    }
+    return rules;
+}
 
 set<tokens> getFirst(vector<int> vecVaribales, vector<int> used)
 {
@@ -121,12 +143,104 @@ void compute_first()
     print_first(vec4Print);
 }
 
-/**
+
+set<tokens> getFollow_init(int vecVaribale) 
+{
+	set<tokens> finalSet;
+	 
+	if (vecVaribale == (int)S) 
+	{
+		finalSet.insert((tokens)EF);		
+	}	
+	 return finalSet;
+}
+
+int indexOf(vector<int> vec, int var)
+{
+	int i = 0;
+	for (vector<int>::const_iterator it = vec.begin(); it != vec.end(); ++it)
+	{
+		if (*it == var)
+		{
+			return i;
+		}
+		i++;
+	}
+	return -1;
+}
+
+set<tokens> getFollow(nonterminal nt)
+{
+	set<tokens> finalSet;
+	vector< grammar_rule >  vecRules = getContainingRules(nt);
+	for (vector< grammar_rule >::const_iterator it = vecRules.begin(); it != vecRules.end(); ++it) 
+	{
+		grammar_rule currentRule = *it;
+		vector<int> vecRHSCurrentRule = currentRule.rhs;
+		int index = indexOf(vecRHSCurrentRule, nt);
+		if (index == -1)
+		{
+			// TODO: delete tyhis before submitting-
+			cout << "getContainingRules has brought inccorect containing rule";
+			continue;
+		}
+		if (index + 1 >= vecRHSCurrentRule.size())
+		{
+			/// if nt is the last nonterminal in the rule
+			continue;
+		}
+		int beta = (tokens)vecRHSCurrentRule[index + 1];
+		//cout << "beta is " << beta << endl;
+		vector<int> vecTmp;
+		vecTmp.push_back(beta);
+		vector<int> used;
+		set<tokens> setTmp = getFirst(vecTmp, used);
+		finalSet.insert(setTmp.begin(), setTmp.end());
+		
+		if (isNullable((nonterminal)beta))
+		{
+			nonterminal Y = currentRule.lhs;
+			//cout << "Y is " << (int)Y << endl;
+			set<tokens> setTmp2 = getFollow(Y);
+			finalSet.insert(setTmp2.begin(), setTmp2.end());
+		}
+		
+	}
+	return finalSet;
+}
+ /**
  * computes follow for all nonterminal (see nonterminal enum in grammar.h)
  * calls print_follow when finished
  */
 void compute_follow()
 {
+	cout << "compute_follow()" << endl;
+	//vector< grammar_rule >  vecVaribales = getContainingRules(Collection);
+	//
+	//for (vector< grammar_rule >::const_iterator it = vecVaribales.begin(); it != vecVaribales.end(); ++it) 
+	//{
+	//	printVector((*it).rhs);
+	//}
+	
+	set<tokens> setTmp = getFollow(Collection);
+	for (set<tokens>::const_iterator it = setTmp.begin(); it != setTmp.end(); ++it)
+	{
+		cout << "token: " << *it << endl;
+	}
+	
+	//vector< set<tokens> > vec4Print;
+	//
+	//for (int i = 0; i < NONTERMINAL_ENUM_SIZE; ++i) {		
+	//	vector<int> used;
+	//	//cout << " i is " << i << endl;
+	//	set<tokens> setTmp = getFollow_init(i);
+	//	
+	//	
+	//	vec4Print.push_back(setTmp);
+	//}
+    //
+    //print_follow(vec4Print);	
+	
 }
 
 /**
