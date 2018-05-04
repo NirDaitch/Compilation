@@ -6,12 +6,12 @@
 #include <string.h>
 #include <stdlib.h>
 
-void showToken(int);
-void showTokenInt(char *);
+int showToken(int);
+int showTokenInt(char *);
 void showError();
-void handleString1(char *);
+int handleString1(char *);
 void initHandleString();
-void handleString2(char *);
+int handleString2(char *);
 void determineEscapeOrEOF();
 void pushToString(char*);
 void initStr666(char *,int);
@@ -98,7 +98,7 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 \'([\x20-\x26\x28-\x7E\x0D\x0A\x09]|\x0D\x0A)*\'	  handleString1("STRING");
 
 
-\"\"                                printf("%d\n", STRING);
+\"\"                                return STRING;
 
 "\""								      BEGIN(STRING); initHandleString();
 <STRING>[^\\\"]                  		  pushToString(yytext);
@@ -118,7 +118,7 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 \'[^\']*					printf("Error unclosed string\n");exit(0);
 
 
-<<EOF>>                     showToken(EOF);exit(0);
+<<EOF>>                     return showToken(EF); exit(0);
 
 {whitespace}                ;
 
@@ -168,19 +168,20 @@ void determineEscapeOrEOF()
 	exit(0);
 }
 
-void showToken(int name)
+int showToken(int name)
 {
 	
 	if (name == COMMENT)
 	{
 		//printf("%d %s %s", yylineno, name, yytext);	
-		return;
+		return name;
 	} 
 	
-	printf("%d\n", name);	
+	//printf("%d\n", name);	
+	return name;
 }
 
-void showTokenInt(char *name) {
+int showTokenInt(char *name) {
 	char *end;
 	long ans=strtol(yytext,&end,0);
 	char *tmp=name;
@@ -193,17 +194,17 @@ void showTokenInt(char *name) {
 			ans=strtol(&(str[1]),&end,0);
 		}
 	}
-	printf("%d\n", INTEGER);
+	return INTEGER;
 	
 }
 
-void handleString1(char *name) {
+int handleString1(char *name) {
 	char str[yyleng+1]; 
 	//trimming starting and trailing apostrophe
 	yytext++;
 	strcpy(str,yytext);
 	str[yyleng-2]='\0';
-	printf("%d\n", STRING);
+	return STRING;
 }
 
 void initHandleString()
@@ -221,7 +222,7 @@ void pushToString(char* sText)
 	strcat(cCurrentString, sText);
 }
 
-void handleString2(char *name) 
+int handleString2(char *name) 
 {
 	char val;
 	char val2;
@@ -354,7 +355,7 @@ void handleString2(char *name)
 
 		}
 	}	
-	printf("%d\n", STRING);
+	return STRING;
 
 }
 

@@ -352,6 +352,7 @@ void printMap(map< nonterminal, map<tokens, int> > mpM)
 void parser()
 {
 
+
 	vector< set<tokens> > vec4Print;
     for (int i = 0; i < grammar.size() ; ++i) {
         grammar_rule rule = grammar[i];
@@ -365,10 +366,12 @@ void parser()
 	{
 		putInMap(i, vec4Print[i], grammar[i].lhs, mpM);
 	}
-	
+
 	vector<int> Q;
 	Q.push_back(S);
+
 	tokens currToken = (tokens) yylex();
+
 	do
 	{
 		if (Q.size() == 0)
@@ -380,6 +383,13 @@ void parser()
 			}
 			cout << "Syntax error\n";
 			return;
+		}
+		else {
+		    if (currToken == EF)
+            {
+                cout << "Syntax error\n";
+                return;
+            }
 		}
 		
 		const int X = Q.back();
@@ -395,10 +405,12 @@ void parser()
 		}
 		else
 		{
+		    ///predict
 			Q.pop_back();
 			nonterminal ntX = (nonterminal)X;
 			map< tokens, int > currNTMap = mpM[ntX];
 			int iRuleNum = currNTMap[currToken];
+			cout << iRuleNum << "\n";
 			vector<int> vecRHS = (grammar[iRuleNum]).rhs;
 			for (vector<int>::reverse_iterator  it = vecRHS.rbegin(); it != vecRHS.rend(); ++it)
 			{
@@ -410,8 +422,9 @@ void parser()
 		currToken = (tokens) yylex();
 		
 	} while(currToken != EF);
-		
-	cout << "Syntax error\n";
+
+    cout << "Syntax error\n";
+    return;
 	
 	//cout << "match(Structure, STARTSTRUCT)" << match(Structure, STARTSTRUCT, mpM) << endl;
 	//cout << "match(Key, COMPLEXKEY)" << match(Key, COMPLEXKEY, mpM) << endl;
