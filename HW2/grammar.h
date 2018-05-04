@@ -6,8 +6,8 @@
 #include <set>
 
 enum nonterminal {
-	S,
-	Structure,
+	S, // 0
+	Structure, // 1
 	SItems,
 	Collection,
 	List,

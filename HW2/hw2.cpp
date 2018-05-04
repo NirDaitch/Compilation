@@ -179,7 +179,7 @@ int indexOf(vector<int> vec, int var)
 
 set<tokens> getFollow(nonterminal nt,vector<int> used)
 {
-	set<tokens> finalSet;
+	set<tokens> finalSet = getFollow_init(nt);
 	vector< grammar_rule >  vecRules = getContainingRules(nt);
 	//cout<<"current nt = " << nt<<endl;
 	for (vector< grammar_rule >::const_iterator it = vecRules.begin(); it != vecRules.end(); ++it)
@@ -241,49 +241,29 @@ set<tokens> getFollow(nonterminal nt,vector<int> used)
  */
 void compute_follow()
 {
-	cout << "compute_follow()" << endl;
-	//vector< grammar_rule >  vecVaribales = getContainingRules(Collection);
-	//
-	//for (vector< grammar_rule >::const_iterator it = vecVaribales.begin(); it != vecVaribales.end(); ++it)
-	//{
-	//	printVector((*it).rhs);
-	//}
-
-	//set<tokens> setTmp = getFollow(Collection);
-	//for (set<tokens>::const_iterator it = setTmp.begin(); it != setTmp.end(); ++it)
-	//{
-	//	cout << "token: " << *it << endl;
-	//}
+	//cout << "compute_follow()" << endl;
 
 	vector< set<tokens> > vec4Print;
 	for (int i = 0; i < NONTERMINAL_ENUM_SIZE; ++i) {
         vector<int> used;
-		set<tokens> setTmp = getFollow_init((nonterminal)i);
-		set<tokens> setTmp2 = getFollow((nonterminal)i,used);
-		setTmp.insert(setTmp2.begin(), setTmp2.end());
+		set<tokens> setTmp = getFollow((nonterminal)i,used);
 		vec4Print.push_back(setTmp);
 	}
 
+	/////////////////////////////////
+    //vector<int> used;
+    //set<tokens> setTmp = getFollow_init(Structure);
+    //set<tokens> setTmp2 = getFollow( (nonterminal)Structure,used);
+    //setTmp.insert(setTmp2.begin(), setTmp2.end());
+    //
+    // for (set<tokens>::const_iterator XX = setTmp.begin(); XX != setTmp.end(); ++XX)
+    // {
+    //     cout << *XX << endl;
+    // }
+    // cout << "set size is " << setTmp.size() << endl;
+///////////////////////////////////
 
 
-
-
-
-
-
-     //vector<int> used;
-//     set<tokens> setTmp = getFollow_init(List);
-//     set<tokens> setTmp2 = getFollow( (nonterminal)List,used);
-//     setTmp.insert(setTmp2.begin(), setTmp2.end());
-//    // vec4Print.push_back(setTmp);
-//
-//     cout << "start set" << endl;
-//     for (set<tokens>::const_iterator XX = setTmp2.begin(); XX != setTmp2.end(); ++XX)
-//     {
-//         cout << *XX << endl;
-//     }
-//     cout << setTmp2.size();
-//     cout << "end set" << endl;
 
     print_follow(vec4Print);
 
