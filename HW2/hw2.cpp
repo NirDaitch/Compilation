@@ -41,7 +41,6 @@ bool contains2(vector<int> vec, nonterminal var)
     return find(vec.begin(), vec.end(), var) != vec.end();
 }
 
-
 void printVector(vector<int> vec)
 {
 	cout << "start printVector" << endl;
@@ -177,6 +176,7 @@ int indexOf(vector<int> vec, int var)
 	return -1;
 }
 
+
 set<tokens> getFollow(nonterminal nt,vector<int> used)
 {
 	set<tokens> finalSet = getFollow_init(nt);
@@ -235,6 +235,32 @@ set<tokens> getFollow(nonterminal nt,vector<int> used)
 	}
 	return finalSet;
 }
+
+
+set<tokens> getSelect(grammar_rule rule)
+{
+	vector<int> vRhs = rule.rhs;
+	vector<int> usedFirst;
+	set<tokens> setFirst;
+	if (vRhs.size() != 0)
+	{
+		setFirst = getFirst(vRhs, usedFirst);
+		if (vRhs.size() == 1 && !isTerminal(vRhs[0]) && isNullable((nonterminal)vRhs[0])) 		
+		{
+			vector<int> used;
+			set<tokens> setFollow = getFollow((nonterminal)vRhs[0], used);
+			setFirst.insert(setFollow.begin(), setFollow.end());
+		}
+	}
+	else
+	{
+		vector<int> used;
+		set<tokens> setFollow = getFollow(rule.lhs, used);
+		setFirst.insert(setFollow.begin(), setFollow.end());
+	}
+
+	return setFirst;
+}
  /**
  * computes follow for all nonterminal (see nonterminal enum in grammar.h)
  * calls print_follow when finished
@@ -264,7 +290,6 @@ void compute_follow()
 ///////////////////////////////////
 
 
-
     print_follow(vec4Print);
 
 }
@@ -275,6 +300,15 @@ void compute_follow()
  */
 void compute_select()
 {
+	vector< set<tokens> > vec4Print;
+    for (int i = 0; i < grammar.size() ; ++i) {
+		//cout << "running on rule" << i << endl;
+        grammar_rule rule = grammar[i];
+        set<tokens> setTmp = getSelect(rule);
+		vec4Print.push_back(setTmp);
+    }
+	
+	print_select(vec4Print);
 }
 
 /**
