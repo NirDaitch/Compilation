@@ -53,49 +53,49 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 %%
 
 
-(---)			showToken(STARTSTRUCT);
-(\.\.\.)		showToken(ENDSTRUCT);
+(---)			return showToken(STARTSTRUCT);
+(\.\.\.)		return showToken(ENDSTRUCT);
 
-(\[)			showToken(LLIST);
-(\])			showToken(RLIST);
+(\[)			return showToken(LLIST);
+(\])			return showToken(RLIST);
 
-(\{)			showToken(LDICT);
-(\})			showToken(RDICT);
+(\{)			return showToken(LDICT);
+(\})			return showToken(RDICT);
 
-(:)			showToken(KEY);
-(\?)			showToken(COMPLEXKEY);
+(:)			return showToken(KEY);
+(\?)			return showToken(COMPLEXKEY);
 
-(-)			showToken(ITEM);
+(-)			return showToken(ITEM);
 
-(,)			showToken(COMMA);
+(,)			return showToken(COMMA);
 
-(!!{letter}+)			showToken(TYPE);
+(!!{letter}+)			return showToken(TYPE);
 
 
 
 \#                                          BEGIN(COMMENT); initHandleString(); pushToString(yytext);
 <COMMENT>[^\x0D\x0A]              pushToString(yytext);
 <COMMENT>^(\x0D\x0A)              pushToString(yytext);
-<COMMENT>[\x0D\x0A]               BEGIN(INITIAL);
-<COMMENT>\x0D\x0A              BEGIN(INITIAL);
-<COMMENT><<EOF>>                        BEGIN(INITIAL);
+<COMMENT>[\x0D\x0A]               BEGIN(INITIAL); return COMMENT;
+<COMMENT>\x0D\x0A              BEGIN(INITIAL); return COMMENT;
+<COMMENT><<EOF>>                        BEGIN(INITIAL); return COMMENT;
 
 
 
 
-(true)			showToken(TRUE);
-(false)			showToken(FALSE);
+(true)			return showToken(TRUE);
+(false)			return showToken(FALSE);
 
 
 
-{integer}   			showTokenInt("INTEGER");		
-{hexaNum}				showTokenInt("INTEGER");
-{octalNum}				showTokenInt("oct");
+{integer}   			return showTokenInt("INTEGER");		
+{hexaNum}				return showTokenInt("INTEGER");
+{octalNum}				return showTokenInt("oct");
 
-({decimal}|{decimal}e[+-]{integer}|\.inf|\.NaN)		showToken(REAL);
+({decimal}|{decimal}e[+-]{integer}|\.inf|\.NaN)		return showToken(REAL);
 
 
-\'([\x20-\x26\x28-\x7E\x0D\x0A\x09]|\x0D\x0A)*\'	  handleString1("STRING");
+\'([\x20-\x26\x28-\x7E\x0D\x0A\x09]|\x0D\x0A)*\'	  return STRING;
 
 
 \"\"                                return STRING;
@@ -106,14 +106,14 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 <STRING>(\\\\)	                 	      pushToString(yytext);
 <STRING>(\\[^\"\\])                 	  pushToString(yytext);
 <STRING><<EOF>>                           determineEscapeOrEOF();
-<STRING>"\""                              handleString2("STRING"); BEGIN(INITIAL);
+<STRING>"\""                              BEGIN(INITIAL); return STRING;
 
 
-{letter}({letter}|{digit})*                       showToken(VAL);
+{letter}({letter}|{digit})*                     return showToken(VAL);
 
-\&({letter})+                       showToken(DECLARATION);
+\&({letter})+                      return showToken(DECLARATION);
 
-\*({letter})+                       showToken(DEREFERENCE);
+\*({letter})+                       return showToken(DEREFERENCE);
 
 \'[^\']*					printf("Error unclosed string\n");exit(0);
 

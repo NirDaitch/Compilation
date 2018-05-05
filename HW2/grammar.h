@@ -8,16 +8,44 @@
 enum nonterminal {
 	S, // 0
 	Structure, // 1
-	SItems,
-	Collection,
-	List,
-	LItems,
-	Map,
-	MItems,
-	Key,
-	Item,
-	NONTERMINAL_ENUM_SIZE
+	SItems, // 2
+	Collection, // 3
+	List, // 4
+	LItems, // 5
+	Map, // 6
+	MItems, // 7
+	Key, // 8
+	Item, // 9
+	NONTERMINAL_ENUM_SIZE // 10
 };
+
+//             		STARTSTRUCT	|	LLIST	|	LDICT
+// S         	|		0		|	1		|	1
+// Structure	|		2		|	
+
+//
+//enum tokens {
+//	STARTSTRUCT = 11,
+//	ENDSTRUCT,	// 12
+//	LLIST, // 13
+//	RLIST, // 14
+//	LDICT, // 15
+//	RDICT, // 16
+//	KEY, // 17
+//	COMPLEXKEY, // 18
+//	ITEM, // 19
+//	COMMA, // 20
+//	TYPE, // 21
+//	TRUE, // 22
+//	FALSE, // 23
+//	INTEGER, // 24
+//	REAL, // 25
+//	STRING, // 26
+//	VAL, // 27
+//	DECLARATION, // 28
+//	DEREFERENCE, // 29
+//	EF // 30
+//};
 
 struct grammar_rule {
 	nonterminal lhs;

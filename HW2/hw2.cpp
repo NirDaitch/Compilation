@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include <map>
+#include <unistd.h>
 
 using namespace std;
 /**
@@ -304,19 +305,19 @@ void compute_select()
 //	return mpCurrentNonTerminal.find(t) != mpCurrentNonTerminal.end();
 //}
 
-bool match(tokens a, tokens t, map< nonterminal, map<tokens, int> >& mpM)
-{
-	bool bMatch = false;
-	for (int i = 0; i < NONTERMINAL_ENUM_SIZE; ++i)
-	{
-		map<tokens, int> mpCurrentNonTerminal = mpM[(nonterminal)i];
-		if (mpCurrentNonTerminal.find(t) != mpCurrentNonTerminal.end())
-		{
-			bMatch = true;
-		}
-	}
-	return bMatch;
-}
+//bool match(tokens a, tokens t, map< nonterminal, map<tokens, int> >& mpM)
+//{
+//	bool bMatch = false;
+//	for (int i = 0; i < NONTERMINAL_ENUM_SIZE; ++i)
+//	{
+//		map<tokens, int> mpCurrentNonTerminal = mpM[(nonterminal)i];
+//		if (mpCurrentNonTerminal.find(t) != mpCurrentNonTerminal.end())
+//		{
+//			bMatch = true;
+//		}
+//	}
+//	return bMatch;
+//}
 
 void putInMap(int rule, set<tokens> selectSet, nonterminal nt, map< nonterminal, map<tokens, int> >& mpM)
 {
@@ -366,15 +367,22 @@ void parser()
 	{
 		putInMap(i, vec4Print[i], grammar[i].lhs, mpM);
 	}
+	
+	
+	//printMap(mpM);
 
-	vector<int> Q;
-	Q.push_back(S);
-
+	vector<int> Queue;
+	
+	Queue.push_back((int)S);
+	
 	tokens currToken = (tokens) yylex();
 
 	do
 	{
-		if (Q.size() == 0)
+		cout << "START LOOP" << endl;
+		//cout << "currToken is " << currToken << endl;
+
+		if (Queue.empty())
 		{
 			if (currToken == EF)
 			{
@@ -392,34 +400,55 @@ void parser()
             }
 		}
 		
-		const int X = Q.back();
+		int X = Queue.back();
+		
+		cout << "X is " << X << endl;
+		cout << "current token is " << currToken << endl;
+		
+		
 		if (isTerminal(X))
 		{
-			bool bMatch = match((tokens) X, currToken, mpM);
+			//bool bMatch = match((tokens) X, currToken, mpM);
+			bool bMatch = ((tokens) X) == currToken;
+			//cout << "found match!" << endl;
 			if (!bMatch)
 			{
 				cout << "Syntax error\n";
 				return;
 			}
-			Q.pop_back();
+			Queue.pop_back();
+			currToken = (tokens) yylex();
 		}
 		else
 		{
 		    ///predict
-			Q.pop_back();
+			//cout << "--> in predict" << endl;
+			
 			nonterminal ntX = (nonterminal)X;
+			Queue.pop_back();
 			map< tokens, int > currNTMap = mpM[ntX];
-			int iRuleNum = currNTMap[currToken];
-			cout << iRuleNum << "\n";
-			vector<int> vecRHS = (grammar[iRuleNum]).rhs;
-			for (vector<int>::reverse_iterator  it = vecRHS.rbegin(); it != vecRHS.rend(); ++it)
+			if (currNTMap.find(currToken) == currNTMap.end())
 			{
-				Q.push_back(*it);
+				cout << "Syntax error\n";
+				return;
 			}
+			
+			int iRuleNum = currNTMap[currToken];
+			cout << "rule no. " << (iRuleNum  + 1 )<< "\n"; // do not remove +1 !!!
+			vector<int> vecRHS = (grammar[iRuleNum]).rhs;
+			for (vector<int>::reverse_iterator it = vecRHS.rbegin(); it != vecRHS.rend(); ++it)
+			{
+				//cout << "----> in var " << *it << endl;
+				Queue.push_back(*it);
+			}
+			
 		}
+		cout << "Queue print:" << endl;
+		printVector(Queue);
+		cout << endl << "end Queue print." << endl;
+		cout << "END LOOP" << endl << endl;
+		usleep(500000);
 		
-		
-		currToken = (tokens) yylex();
 		
 	} while(currToken != EF);
 
