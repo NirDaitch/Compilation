@@ -76,9 +76,9 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 \#                                          BEGIN(COMMENT); initHandleString(); pushToString(yytext);
 <COMMENT>[^\x0D\x0A]              pushToString(yytext);
 <COMMENT>^(\x0D\x0A)              pushToString(yytext);
-<COMMENT>[\x0D\x0A]               BEGIN(INITIAL); return COMMENT;
-<COMMENT>\x0D\x0A              BEGIN(INITIAL); return COMMENT;
-<COMMENT><<EOF>>                        BEGIN(INITIAL); return COMMENT;
+<COMMENT>[\x0D\x0A]               BEGIN(INITIAL); 
+<COMMENT>\x0D\x0A              BEGIN(INITIAL); 
+<COMMENT><<EOF>>                        BEGIN(INITIAL);
 
 
 
@@ -106,7 +106,7 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 <STRING>(\\\\)	                 	      pushToString(yytext);
 <STRING>(\\[^\"\\])                 	  pushToString(yytext);
 <STRING><<EOF>>                           determineEscapeOrEOF();
-<STRING>"\""                              BEGIN(INITIAL); return STRING;
+<STRING>"\""                              BEGIN(INITIAL); return STRING; 
 
 
 {letter}({letter}|{digit})*                     return showToken(VAL);
@@ -169,14 +169,7 @@ void determineEscapeOrEOF()
 }
 
 int showToken(int name)
-{
-	
-	if (name == COMMENT)
-	{
-		//printf("%d %s %s", yylineno, name, yytext);	
-		return name;
-	} 
-	
+{ 
 	//printf("%d\n", name);	
 	return name;
 }

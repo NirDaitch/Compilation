@@ -371,9 +371,9 @@ void parser()
 	
 	//printMap(mpM);
 
-	vector<int> Queue;
+	vector<int> queue;
 	
-	Queue.push_back((int)S);
+	queue.push_back((int)S);
 	
 	tokens currToken = (tokens) yylex();
 
@@ -382,7 +382,7 @@ void parser()
 		cout << "START LOOP" << endl;
 		//cout << "currToken is " << currToken << endl;
 
-		if (Queue.empty())
+		if (queue.empty())
 		{
 			if (currToken == EF)
 			{
@@ -400,7 +400,7 @@ void parser()
             }
 		}
 		
-		int X = Queue.back();
+		int X = queue.back();
 		
 		cout << "X is " << X << endl;
 		cout << "current token is " << currToken << endl;
@@ -416,7 +416,7 @@ void parser()
 				cout << "Syntax error\n";
 				return;
 			}
-			Queue.pop_back();
+			queue.pop_back();
 			currToken = (tokens) yylex();
 		}
 		else
@@ -425,7 +425,7 @@ void parser()
 			//cout << "--> in predict" << endl;
 			
 			nonterminal ntX = (nonterminal)X;
-			Queue.pop_back();
+			queue.pop_back();
 			map< tokens, int > currNTMap = mpM[ntX];
 			if (currNTMap.find(currToken) == currNTMap.end())
 			{
@@ -439,15 +439,15 @@ void parser()
 			for (vector<int>::reverse_iterator it = vecRHS.rbegin(); it != vecRHS.rend(); ++it)
 			{
 				//cout << "----> in var " << *it << endl;
-				Queue.push_back(*it);
+				queue.push_back(*it);
 			}
 			
 		}
 		cout << "Queue print:" << endl;
-		printVector(Queue);
+		printVector(queue);
 		cout << endl << "end Queue print." << endl;
 		cout << "END LOOP" << endl << endl;
-		usleep(500000);
+		//usleep(500000);
 		
 		
 	} while(currToken != EF);
