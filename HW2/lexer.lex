@@ -106,7 +106,7 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 <STRING>(\\\\)	                 	      pushToString(yytext);
 <STRING>(\\[^\"\\])                 	  pushToString(yytext);
 <STRING><<EOF>>                           determineEscapeOrEOF();
-<STRING>"\""                              BEGIN(INITIAL); return STRING; 
+<STRING>"\""                              BEGIN(INITIAL); return handleString2("STRING");  
 
 
 {letter}({letter}|{digit})*                     return showToken(VAL);
