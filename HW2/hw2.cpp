@@ -2,6 +2,7 @@
 #include <vector>
 #include <iostream>
 #include <algorithm>
+#include <map>
 
 using namespace std;
 /**
@@ -43,12 +44,12 @@ bool contains2(vector<int> vec, nonterminal var)
 
 void printVector(vector<int> vec)
 {
-	cout << "start printVector" << endl;
+	//cout << "start printVector" << endl;
 	for (vector<int>::const_iterator XX = vec.begin(); XX != vec.end(); ++XX)
 	{
-		cout << *XX << endl;
+		cout << *XX << " ";
 	}
-	cout << "end printVector" << endl;
+	//cout << "end printVector" << endl;
 }
 
 
@@ -267,7 +268,6 @@ set<tokens> getSelect(grammar_rule rule)
  */
 void compute_follow()
 {
-	//cout << "compute_follow()" << endl;
 
 	vector< set<tokens> > vec4Print;
 	for (int i = 0; i < NONTERMINAL_ENUM_SIZE; ++i) {
@@ -275,20 +275,6 @@ void compute_follow()
 		set<tokens> setTmp = getFollow((nonterminal)i,used);
 		vec4Print.push_back(setTmp);
 	}
-
-	/////////////////////////////////
-    //vector<int> used;
-    //set<tokens> setTmp = getFollow_init(Structure);
-    //set<tokens> setTmp2 = getFollow( (nonterminal)Structure,used);
-    //setTmp.insert(setTmp2.begin(), setTmp2.end());
-    //
-    // for (set<tokens>::const_iterator XX = setTmp.begin(); XX != setTmp.end(); ++XX)
-    // {
-    //     cout << *XX << endl;
-    // }
-    // cout << "set size is " << setTmp.size() << endl;
-///////////////////////////////////
-
 
     print_follow(vec4Print);
 
@@ -311,10 +297,67 @@ void compute_select()
 	print_select(vec4Print);
 }
 
+
+bool match(nonterminal X, tokens t, map< nonterminal, map<tokens, int> >& mpM)
+{
+	map<tokens, int> mpCurrentNonTerminal = mpM[X];
+	return mpCurrentNonTerminal.find(t) != mpCurrentNonTerminal.end();
+}
+
+void putInMap(int rule, set<tokens> selectSet, nonterminal nt, map< nonterminal, map<tokens, int> >& mpM)
+{
+	map<tokens, int>& mpCurrentNonTerminal = mpM[nt];
+	for (set<tokens>::iterator it = selectSet.begin(); it != selectSet.end(); ++it) 
+	{
+		tokens currentToken = *it;
+		mpCurrentNonTerminal[currentToken] = rule;
+	}
+
+}
+ 
+ 
+void printMap(map< nonterminal, map<tokens, int> > mpM)
+{
+	cout << "printing map" << endl;
+	for (map< nonterminal, map<tokens, int> >::iterator it = mpM.begin(); it != mpM.end(); it++)
+	{
+		cout << "nonterminal is " << it->first << " ";
+		map< tokens, int > currMap = it->second;
+		for (map< tokens, int >::iterator it2 = currMap.begin(); it2 != currMap.end(); it2++)
+		{
+			cout << ((int)it2->first) << " -> " << it2->second;
+			cout << " , ";
+		}
+		cout << endl;
+	}
+}
+ 
 /**
  * implements an LL(1) parser for the grammar using yylex()
  */
 void parser()
 {
+	cout<<"starting parser\n";
+	vector< set<tokens> > vec4Print;
+    for (int i = 0; i < grammar.size() ; ++i) {
+        grammar_rule rule = grammar[i];
+        set<tokens> setTmp = getSelect(rule);
+		vec4Print.push_back(setTmp);
+    }
+	
+	map< nonterminal, map<tokens, int> > mpM;
+	
+	for (int i = 0; i < grammar.size() ; ++i) 
+	{
+		putInMap(i, vec4Print[i], grammar[i].lhs, mpM);
+	}
+	
+	//cout << "match(Structure, STARTSTRUCT)" << match(Structure, STARTSTRUCT, mpM) << endl;
+	//cout << "match(Key, COMPLEXKEY)" << match(Key, COMPLEXKEY, mpM) << endl;
+	//cout << "match(Map, LLIST)" << match(Map, LLIST, mpM) << endl;
+	
+	//printMap(mpM);
+	
+	
 }
 
