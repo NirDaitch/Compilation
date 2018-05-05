@@ -298,10 +298,24 @@ void compute_select()
 }
 
 
-bool match(nonterminal X, tokens t, map< nonterminal, map<tokens, int> >& mpM)
+//bool match(nonterminal X, tokens t, map< nonterminal, map<tokens, int> >& mpM)
+//{
+//	map<tokens, int> mpCurrentNonTerminal = mpM[X];
+//	return mpCurrentNonTerminal.find(t) != mpCurrentNonTerminal.end();
+//}
+
+bool match(tokens a, tokens t, map< nonterminal, map<tokens, int> >& mpM)
 {
-	map<tokens, int> mpCurrentNonTerminal = mpM[X];
-	return mpCurrentNonTerminal.find(t) != mpCurrentNonTerminal.end();
+	bool bMatch = false;
+	for (int i = 0; i < NONTERMINAL_ENUM_SIZE; ++i)
+	{
+		map<tokens, int> mpCurrentNonTerminal = mpM[(nonterminal)i];
+		if (mpCurrentNonTerminal.find(t) != mpCurrentNonTerminal.end())
+		{
+			bMatch = true;
+		}
+	}
+	return bMatch;
 }
 
 void putInMap(int rule, set<tokens> selectSet, nonterminal nt, map< nonterminal, map<tokens, int> >& mpM)
@@ -337,7 +351,7 @@ void printMap(map< nonterminal, map<tokens, int> > mpM)
  */
 void parser()
 {
-	cout<<"starting parser\n";
+
 	vector< set<tokens> > vec4Print;
     for (int i = 0; i < grammar.size() ; ++i) {
         grammar_rule rule = grammar[i];
@@ -352,12 +366,59 @@ void parser()
 		putInMap(i, vec4Print[i], grammar[i].lhs, mpM);
 	}
 	
+	vector<int> Q;
+	Q.push_back(S);
+	tokens currToken = (tokens) yylex();
+	do
+	{
+		if (Q.size() == 0)
+		{
+			if (currToken == EF)
+			{
+				cout << "Success\n";
+				return;
+			}
+			cout << "Syntax error\n";
+			return;
+		}
+		
+		const int X = Q.back();
+		if (isTerminal(X))
+		{
+			bool bMatch = match((tokens) X, currToken, mpM);
+			if (!bMatch)
+			{
+				cout << "Syntax error\n";
+				return;
+			}
+			Q.pop_back();
+		}
+		else
+		{
+			Q.pop_back();
+			nonterminal ntX = (nonterminal)X;
+			map< tokens, int > currNTMap = mpM[ntX];
+			int iRuleNum = currNTMap[currToken];
+			vector<int> vecRHS = (grammar[iRuleNum]).rhs;
+			for (vector<int>::reverse_iterator  it = vecRHS.rbegin(); it != vecRHS.rend(); ++it)
+			{
+				Q.push_back(*it);
+			}
+		}
+		
+		
+		currToken = (tokens) yylex();
+		
+	} while(currToken != EF);
+		
+	cout << "Syntax error\n";
+	
 	//cout << "match(Structure, STARTSTRUCT)" << match(Structure, STARTSTRUCT, mpM) << endl;
 	//cout << "match(Key, COMPLEXKEY)" << match(Key, COMPLEXKEY, mpM) << endl;
 	//cout << "match(Map, LLIST)" << match(Map, LLIST, mpM) << endl;
 	
 	//printMap(mpM);
 	
-	
+
 }
 
