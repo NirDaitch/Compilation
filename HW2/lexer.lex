@@ -23,7 +23,7 @@ char cCurrentString[1050];
 %option yylineno
 %option noyywrap
 
-%x STRING
+%x TSTRING
 %x COMMENT
 
 
@@ -100,13 +100,13 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 
 \"\"                                return STRING;
 
-"\""								      BEGIN(STRING); initHandleString();
-<STRING>[^\\\"]                  		  pushToString(yytext);
-<STRING>(\\\")                   		  pushToString(yytext);
-<STRING>(\\\\)	                 	      pushToString(yytext);
-<STRING>(\\[^\"\\])                 	  pushToString(yytext);
-<STRING><<EOF>>                           determineEscapeOrEOF();
-<STRING>"\""                              BEGIN(INITIAL); return handleString2("STRING");  
+"\""								      BEGIN(TSTRING); initHandleString();
+<TSTRING>[^\\\"]                  		  pushToString(yytext);
+<TSTRING>(\\\")                   		  pushToString(yytext);
+<TSTRING>(\\\\)	                 	      pushToString(yytext);
+<TSTRING>(\\[^\"\\])                 	  pushToString(yytext);
+<TSTRING><<EOF>>                           determineEscapeOrEOF();
+<TSTRING>"\""                              BEGIN(INITIAL); return handleString2("STRING");  
 
 
 {letter}({letter}|{digit})*                     return showToken(VAL);
