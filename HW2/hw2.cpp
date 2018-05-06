@@ -354,6 +354,7 @@ void parser()
 {
 
 
+
 	vector< set<tokens> > vec4Print;
     for (int i = 0; i < grammar.size() ; ++i) {
         grammar_rule rule = grammar[i];
@@ -374,12 +375,12 @@ void parser()
 	vector<int> queue;
 	
 	queue.push_back((int)S);
-	
+
 	tokens currToken = (tokens) yylex();
 
 	do
 	{
-		cout << "START LOOP" << endl;
+		//cout << "START LOOP" << endl;
 		//cout << "currToken is " << currToken << endl;
 
 		if (queue.empty())
@@ -389,6 +390,7 @@ void parser()
 				cout << "Success\n";
 				return;
 			}
+
 			cout << "Syntax error\n";
 			return;
 		}
@@ -402,8 +404,8 @@ void parser()
 		
 		int X = queue.back();
 		
-		cout << "X is " << X << endl;
-		cout << "current token is " << currToken << endl;
+		//cout << "X is " << X << endl;
+		//cout << "current token is " << currToken << endl;
 		
 		
 		if (isTerminal(X))
@@ -434,7 +436,7 @@ void parser()
 			}
 			
 			int iRuleNum = currNTMap[currToken];
-			cout << "rule no. " << (iRuleNum  + 1 )<< "\n"; // do not remove +1 !!!
+			cout <<  (iRuleNum  + 1 )<< "\n"; // do not remove +1 !!!
 			vector<int> vecRHS = (grammar[iRuleNum]).rhs;
 			for (vector<int>::reverse_iterator it = vecRHS.rbegin(); it != vecRHS.rend(); ++it)
 			{
@@ -443,15 +445,21 @@ void parser()
 			}
 			
 		}
-		cout << "Queue print:" << endl;
-		printVector(queue);
-		cout << endl << "end Queue print." << endl;
-		cout << "END LOOP" << endl << endl;
+		//cout << "Queue print:" << endl;
+		//printVector(queue); TODO: THIS WAS NOT IN //
+		//cout << endl << "end Queue print." << endl;
+		//cout << "END LOOP" << endl << endl;
 		//usleep(500000);
 		
 		
 	} while(currToken != EF);
 
+    if (queue.empty()) {
+        if (currToken == EF) {
+            cout << "Success\n";
+            return;
+        }
+    }
     cout << "Syntax error\n";
     return;
 	
