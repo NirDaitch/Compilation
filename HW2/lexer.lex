@@ -9,6 +9,7 @@
 int showToken(int);
 int showTokenInt(char *);
 void showError();
+void showError2();
 int handleString1(char *);
 void initHandleString();
 int handleString2(char *);
@@ -95,7 +96,7 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 ({decimal}|{decimal}e[+-]{integer}|\.inf|\.NaN)		return showToken(REAL);
 
 
-\'([\x20-\x26\x28-\x7E\x0D\x0A\x09]|\x0D\x0A)*\'	  return STRING;
+\'([\x20-\x26\x28-\x7E\x0D\x0A\x09]|\x0D\x0A)*\'	  return handleString1("STRING");
 
 
 \"\"                                return STRING;
@@ -115,6 +116,7 @@ validEscape2 	(\\\\|\\"|\\[abefnrtv0]|\\x[a-fA-F][a-fA-F])
 
 \*({letter})+                       return showToken(DEREFERENCE);
 
+\'[^\']*\'                  showError2();exit(0);
 \'[^\']*					printf("Error unclosed string\n");exit(0);
 
 
@@ -229,7 +231,8 @@ int handleString2(char *name)
 			//ok
 		}
 		else {
-			showError();exit(0);
+			printf("Error %c\n",val);
+            exit(0);
 		}
 
 	}
@@ -354,6 +357,29 @@ int handleString2(char *name)
 
 void showError() {
 	printf("Error %s\n", yytext);
+}
+void showError2() {
+
+    char val;
+    for(int i=0;i<yyleng;i++) {
+        val=yytext[i];
+
+        if( (val>='\x20' && val<='\x7E' ) || (val=='\x09')){
+        			//ok
+        }
+        else {
+        	printf("Error %c\n",val);
+            exit(0);
+        }
+
+    }
+    //return;//REMOVE TODO
+    char str[yyleng+1];
+    //trimming starting and trailing apostrophe
+   	yytext++;
+   	strcpy(str,yytext);
+   	str[yyleng-2]='\0';
+	printf("Error %s\n", str);
 }
 void initStr666(char *str,int len) {
 	int i=0;
