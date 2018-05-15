@@ -2,10 +2,12 @@
 	#include <iostream>
 	#include <stdlib.h>
 
+	 
+	
 	using namespace std;
 
 	extern int yylex();
-	int yyerror(char * message);
+	int yyerror(const char * message);
 %}
 
 %token VOID
@@ -38,19 +40,78 @@
 %token NUM
 %token STRING
 
+%token __epsilon__
 
 %%
 
-S	:	INT {cout<<"hello world\n";}
+Program		:	Funcs;
+Funcs		:	__epsilon__ 
+			|	FuncDecl	Funcs;
 
+FuncDecl	:	RetType	ID	LPAREN	Formals	RPAREN	LBRACE	Statements	RBRACE;
+RetType		:	Type
+			| 	VOID;
+
+Formals		:	__epsilon__
+			|	FormalsList;
+
+FormalsList	:	FormalDecl
+			|	FormalDecl	COMMA	FormalsList;
+				
+FormalDecl	:	Type	ID
+			|	Type	ID	LBRACK	NUM	RBRACK
+			|	Type	ID	LBRACK	NUM		B	RBRACK;
+				
+Statements	:	Statement
+			|	Statements	Statement
+
+Statement	:	LBRACE	Statements	RBRACE
+			|	Type	ID	SC
+			|	Type	ID	ASSIGN	Exp	SC
+			|	Type	ID	LBRACK	NUM	RBRACK	SC
+			|	Type	ID	LBRACK	NUM	B 	RBRACK SC
+			|	ID	ASSIGN	Exp	SC
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC
+			|	Call SC
+			|	RETURN SC
+			|	RETURN Exp SC
+			| 	IF LPAREN Exp RPAREN Statement
+			|   IF LPAREN Exp RPAREN Statement ELSE Statement
+			|	WHILE LPAREN Exp RPAREN Statement
+			|	BREAK SC;
+				
+Call 		:	ID LPAREN ExpList RPAREN
+				|  ID LPAREN RPAREN;
+				
+ExpList 	:	Exp
+			|	Exp COMMA ExpList;
+			
+Type		:	INT
+			|	BYTE
+			|	BOOL;
+			
+Exp 		:	LPAREN Exp RPAREN
+			|	ID LBRACK Exp RBRACK
+			|	Exp BINOP Exp
+			|	ID
+			|	Call
+			|	NUM
+			| 	NUM B
+			| 	STRING
+			|	TRUE
+			|	FALSE
+			|	NOT Exp
+			|	Exp AND Exp
+			|	Exp OR Exp
+			| 	Exp RELOP Exp;
 %%
 
 int main()
-{
+{		
 	yyparse();
 }
 
-int yyerror(char * message)
+int yyerror(const char * message)
 {
 	cout<<"Parse error: "<<message<<endl;
 	exit(0);
