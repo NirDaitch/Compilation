@@ -4,11 +4,9 @@
 
 
 #include <stdlib.h>
+#include "definitions.h"
 #include "parser.tab.hpp"
-#include "parser.h"
 #include "output.hpp"
-
-
 using namespace output;
 
 void showError();

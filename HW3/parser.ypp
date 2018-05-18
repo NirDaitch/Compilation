@@ -1,19 +1,13 @@
 %{
 	#include <iostream>
-	#include "stdio.h"
-	#include <stdlib.h>
+	#include "definitions.h"
 	#include "output.hpp"
-	#include "parser.h"
-	 
-	
-	using namespace std;
+	#include <stdio.h>
 	using namespace output;
+	 
 	extern int yylineno;
 	int yylex();
-	int yyerror(const char * message);
-
-
-
+	int yyerror(const char *);
 
 	int iWhileCounter = 0;
 %}

@@ -1,11 +1,10 @@
-#ifndef H_PARSER
-#define H_PARSER
+#ifndef H_DEFINITIONS
+#define H_DEFINITIONS
 
-#include <list>
-#include <string>
 #include <stdlib.h>
-
-#define YYSTYPE EXPATTRIBUTE
+#include <string>
+#include <list>
+#define YYSTYPE TYPE_ID
 
 using namespace std;
 
@@ -18,7 +17,7 @@ typedef struct {
 	int id;
     Type type;
     
-} EXPATTRIBUTE;
+} TYPE_ID;
 
 
 
