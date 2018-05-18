@@ -1,13 +1,21 @@
 %{
 	#include <iostream>
+	#include "stdio.h"
 	#include <stdlib.h>
-
+	#include "output.hpp"
+	#include "parser.h"
 	 
 	
 	using namespace std;
-
-	extern int yylex();
+	using namespace output;
+	extern int yylineno;
+	int yylex();
 	int yyerror(const char * message);
+
+
+
+
+	int iWhileCounter = 0;
 %}
 
 %token VOID INT BYTE RETURN B SC COMMA ID STRING TRUE FALSE
@@ -69,12 +77,18 @@ Statement	:	LBRACE	Statements	RBRACE
 			|	ID	ASSIGN	Exp	SC
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC
 			|	Call SC
-			|	RETURN SC
-			|	RETURN Exp SC
+			|	RETURN  SC {cout<<"normal return. $$=" << $$.id << "$1="<<$1.id << "$2="<<$2.id  << endl;}
+			|	RETURN  Exp SC {cout<<"normal return. $$=" << $$.id << "$1="<<$1.id << "$2="<<$2.id <<"$3"<<$3.id << endl;}
 			| 	IF LPAREN Exp RPAREN Statement
 			|   IF LPAREN Exp RPAREN Statement ELSE Statement
-			|	WHILE LPAREN Exp RPAREN Statement
-			|	BREAK SC;
+			|	WHILE startWhile LPAREN Exp RPAREN Statement endWhile
+			|	BREAK SC {if ((iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(1);}}
+			;
+
+
+startWhile	: {iWhileCounter++;};
+endWhile	: {iWhileCounter--;};
+
 				
 Call 		:	ID LPAREN ExpList RPAREN
 			|  ID LPAREN RPAREN;
@@ -102,6 +116,8 @@ Exp 		:	LPAREN Exp RPAREN
 			| 	Exp RELOP_1 Exp
 			| 	Exp RELOP_2 Exp
 			|	NOT Exp;
+
+
 %%
 
 int main()

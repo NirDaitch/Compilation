@@ -1,10 +1,15 @@
 %{
 
 /* Declarations section */
-#include <stdio.h>
-#include <string.h>
+
+
 #include <stdlib.h>
 #include "parser.tab.hpp"
+#include "parser.h"
+#include "output.hpp"
+
+
+using namespace output;
 
 void showError();
 %}
@@ -31,7 +36,7 @@ or 										return OR;
 not 									return NOT;
 true 									return TRUE;
 false 									return FALSE;
-return 									return RETURN;
+return 									{yylval.id = 666; return RETURN;}	;								
 if 										return IF;
 else 									return ELSE;
 while 									return WHILE;
