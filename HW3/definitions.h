@@ -4,7 +4,8 @@
 #include <stdlib.h>
 #include <string>
 #include <list>
-#define YYSTYPE TYPE_ID
+
+#define YYSTYPE EXP_ATTRIBUTE
 
 using namespace std;
 
@@ -17,7 +18,7 @@ typedef struct {
 	int id;
     Type type;
     
-} TYPE_ID;
+} EXP_ATTRIBUTE;
 
 
 
