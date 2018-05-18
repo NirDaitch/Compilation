@@ -10,9 +10,16 @@
 	int yyerror(const char * message);
 %}
 
-%token VOID INT BYTE B BOOL TRUE FALSE RETURN IF ELSE 
-WHILE SC COMMA ID NUM STRING BREAK
-
+%token VOID INT BYTE B RETURN
+ SC COMMA ID STRING TRUE FALSE
+ 
+%nonassoc IF
+%nonassoc ELSE
+ 
+%token WHILE
+%token BREAK
+%token NUM
+%token BOOL
 
 %right ASSIGN
 
