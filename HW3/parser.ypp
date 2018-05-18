@@ -10,50 +10,38 @@
 	int yyerror(const char * message);
 %}
 
-%token VOID
-%token INT 
-%token BYTE
-%token B
-%token BOOL
-%token AND
-%token OR
-%token NOT
-%token TRUE
-%token FALSE
-%token RETURN
-%token IF
-%token ELSE
-%token WHILE
-%token BREAK
-%token SC
-%token COMMA
-%token LPAREN
-%token RPAREN
-%token LBRACE
-%token RBRACE
-%token LBRACK
-%token RBRACK
-%token ASSIGN
-%token RELOP
-%token BINOP
-%token ID
-%token NUM
-%token STRING
+%token VOID INT BYTE B BOOL TRUE FALSE RETURN IF ELSE 
+WHILE SC COMMA ID NUM STRING BREAK
 
-%token __epsilon__
+
+%right ASSIGN
+
+%left OR    
+%left AND    
+
+%left 	RELOP_2
+%nonassoc RELOP_1
+
+%left BINOP_2
+%left BINOP_1
+
+%right NOT
+
+%left LPAREN RPAREN LBRACE RBRACE LBRACK RBRACK
+
 
 %%
 
 Program		:	Funcs;
-Funcs		:	__epsilon__ 
-			|	FuncDecl	Funcs;
+Funcs		:	FuncDecl	Funcs
+			|	;
 
 FuncDecl	:	RetType	ID	LPAREN	Formals	RPAREN	LBRACE	Statements	RBRACE;
 RetType		:	Type
 			| 	VOID;
 
-Formals		:	__epsilon__
-			|	FormalsList;
+Formals		:	FormalsList
+			|	;
 
 FormalsList	:	FormalDecl
 			|	FormalDecl	COMMA	FormalsList;
@@ -81,7 +69,7 @@ Statement	:	LBRACE	Statements	RBRACE
 			|	BREAK SC;
 				
 Call 		:	ID LPAREN ExpList RPAREN
-				|  ID LPAREN RPAREN;
+			|  ID LPAREN RPAREN;
 				
 ExpList 	:	Exp
 			|	Exp COMMA ExpList;
@@ -92,7 +80,6 @@ Type		:	INT
 			
 Exp 		:	LPAREN Exp RPAREN
 			|	ID LBRACK Exp RBRACK
-			|	Exp BINOP Exp
 			|	ID
 			|	Call
 			|	NUM
@@ -100,10 +87,13 @@ Exp 		:	LPAREN Exp RPAREN
 			| 	STRING
 			|	TRUE
 			|	FALSE
-			|	NOT Exp
+			|	Exp BINOP_1 Exp
+			|	Exp BINOP_2 Exp
 			|	Exp AND Exp
 			|	Exp OR Exp
-			| 	Exp RELOP Exp;
+			| 	Exp RELOP_1 Exp
+			| 	Exp RELOP_2 Exp
+			|	NOT Exp;
 %%
 
 int main()

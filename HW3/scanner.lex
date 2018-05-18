@@ -46,9 +46,11 @@ break 									return BREAK;
 \] 										return RBRACK;
 \= 										return ASSIGN;
 			
-(==|!=|<|>|<=|>=) 						return RELOP;
+(==|!=) 								return RELOP_2;
+(<|>|<=|>=) 							return RELOP_1;
 			
-(\+|-|\*|\/) 							return BINOP;
+(\*|\/) 								return BINOP_1;
+(\+|-) 									return BINOP_2;
 ([a-zA-Z][a-zA-Z0-9]*) 					return ID;
 			
 (0|[1-9][0-9]*) 						return NUM;
