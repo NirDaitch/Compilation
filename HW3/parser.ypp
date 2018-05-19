@@ -57,17 +57,17 @@ FormalsList	:	FormalDecl
 			|	FormalDecl	COMMA	FormalsList;
 				
 FormalDecl	:	Type	ID
-			|	Type	ID	LBRACK	NUM	RBRACK
+			|	Type	ID	LBRACK	NUM	RBRACK 
 			|	Type	ID	LBRACK	NUM		B	RBRACK;
 				
 Statements	:	Statement
 			|	Statements	Statement
 
 Statement	:	LBRACE	Statements	RBRACE
-			|	Type	ID	SC 	
+			|	Type	ID	SC 	{$2.type = $1.type; cout << "found int name: " << $2.name << " type: " << $2.type << endl;}
 			|	Type	ID	ASSIGN	Exp	SC	
-			|	Type	ID	LBRACK	NUM	RBRACK	SC {$2.type = Type_INT;}
-			|	Type	ID	LBRACK	NUM	B 	RBRACK SC
+			|	Type	ID	LBRACK	NUM	RBRACK	SC 
+			|	Type	ID	LBRACK	NUM	B 	RBRACK SC 
 			|	ID	ASSIGN	Exp	SC
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC
 			|	Call SC
@@ -78,6 +78,7 @@ Statement	:	LBRACE	Statements	RBRACE
 			|	WHILE startWhile LPAREN Exp RPAREN Statement endWhile
 			|	BREAK SC {if ((iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(1);}}
 			;
+			
 
 
 startWhile	: {iWhileCounter++;};

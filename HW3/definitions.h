@@ -14,6 +14,8 @@ typedef enum {
     Type_INT,
     Type_BYTE,
     Type_STRING,
+    Type_VOID,
+    Type_B,
     Type_BOOL
 } Type;
 
