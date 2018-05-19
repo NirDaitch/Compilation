@@ -34,17 +34,44 @@ class EXP_ATTRIBUTE {
 	~EXP_ATTRIBUTE(){};
 };
 
-typedef struct {
-	std::string id;
-	Type type;
+class T_Symbol {
+	public:
+	std::string name;
+    Type type;
+	
 	int offset; /// TODO: should it be here or inside SymbolTable?
-} T_Symbol;
+	
+	T_Symbol() 
+	{
+		this->name = "";
+	};
+	
+	T_Symbol (const T_Symbol& s)
+	{
+		this->name = s.name;
+		this->type = s.type;
+		this->offset = s.offset;
+	};
+	
+	~T_Symbol(){};
+};
+
 
 class SymbolTable {
 	std::list<T_Symbol> lstSymbolTable;
+	public:
+	
+	void addSymbol(const T_Symbol& symbol)
+	{
+		//cout << "name: " << symbol.name << endl;
+		//cout << "type: " << symbol.type << endl;
+		
+		lstSymbolTable.push_back(symbol);
+	}
 	
 	SymbolTable() 
 	{
+		
 	};
 	~SymbolTable()
 	{	

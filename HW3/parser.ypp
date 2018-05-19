@@ -9,7 +9,13 @@
 	extern int yylex();
 	int yyerror(const char *);
 
-	int iWhileCounter = 0;
+	///////// OUR GLOBAL VARS DEFINITIONS//////////
+	int m_iWhileCounter = 0;
+	ScopeStack m_stScopeStack;
+	
+	///////// OUR FUNCTIONS DEFINITIONS//////////
+	void validateNotAlreadyDefined(std::string name);
+	void createAndPushSymbol(std::string name, Type type);
 %}
 
 %token VOID INT BYTE RETURN B SC COMMA ID STRING TRUE FALSE
@@ -64,9 +70,9 @@ Statements	:	Statement
 			|	Statements	Statement
 
 Statement	:	LBRACE	Statements	RBRACE
-			|	Type	ID	SC 	{$2.type = $1.type; cout << "found var name: " << $2.name << " type: " << $2.type << endl;}
+			|	Type	ID	SC 	{validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type);}
 			|	Type	ID	ASSIGN	Exp	SC	
-			|	Type	ID	LBRACK	NUM	RBRACK	SC {$2.type = $1.type; cout << "found int name: " << $2.name << " type: " << $2.type << endl;}
+			|	Type	ID	LBRACK	NUM	RBRACK	SC
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC 
 			|	ID	ASSIGN	Exp	SC
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC
@@ -76,13 +82,13 @@ Statement	:	LBRACE	Statements	RBRACE
 			| 	IF LPAREN Exp RPAREN Statement
 			|   IF LPAREN Exp RPAREN Statement ELSE Statement
 			|	WHILE startWhile LPAREN Exp RPAREN Statement endWhile
-			|	BREAK SC {if ((iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(1);}}
+			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(1);}}
 			;
 			
 
 
-startWhile	: {iWhileCounter++;};
-endWhile	: {iWhileCounter--;};
+startWhile	: {m_iWhileCounter++;};
+endWhile	: {m_iWhileCounter--;};
 
 				
 Call 		:	ID LPAREN ExpList RPAREN
@@ -115,8 +121,21 @@ Exp 		:	LPAREN Exp RPAREN
 
 %%
 
+void validateNotAlreadyDefined(std::string name)
+{
 
+}
 
+void createAndPushSymbol(std::string name, Type type)
+{
+	T_Symbol symbol;
+	//symbol.name = name;
+	symbol.type = type;
+	//symbol.offset = 
+	SymbolTable table;
+	m_stScopeStack.push_front(table);
+	m_stScopeStack.front().addSymbol(symbol);
+}
 
 int main()
 {		
