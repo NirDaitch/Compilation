@@ -16,6 +16,8 @@
 	///////// OUR FUNCTIONS DEFINITIONS//////////
 	void validateNotAlreadyDefined(std::string name);
 	void createAndPushSymbol(std::string name, Type type);
+	void start_Scope();
+	void end_Scope();
 %}
 
 %token VOID INT BYTE RETURN B SC COMMA ID STRING TRUE FALSE
@@ -52,7 +54,7 @@ Program		:	Funcs;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	RetType	ID	LPAREN	Formals	RPAREN	LBRACE	Statements	RBRACE;
+FuncDecl	:	RetType	ID	LPAREN	Formals	RPAREN	LBRACE ScopeStart Statements ScopeEnd	RBRACE;
 RetType		:	Type
 			| 	VOID;
 
@@ -69,7 +71,7 @@ FormalDecl	:	Type	ID
 Statements	:	Statement
 			|	Statements	Statement
 
-Statement	:	LBRACE	Statements	RBRACE
+Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	SC 	{validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type);}
 			|	Type	ID	ASSIGN	Exp	SC	
 			|	Type	ID	LBRACK	NUM	RBRACK	SC
@@ -118,8 +120,24 @@ Exp 		:	LPAREN Exp RPAREN
 			| 	Exp RELOP_2 Exp
 			|	NOT Exp;
 
+ScopeStart	:	{start_Scope();}
+			;
+		
+ScopeEnd	:	{end_Scope();}
+			;
 
 %%
+
+void start_Scope()
+{
+	SymbolTable newTable;
+	m_stScopeStack.push_front(newTable);
+}
+
+void end_Scope()
+{
+	m_stScopeStack.pop_front();
+}
 
 void validateNotAlreadyDefined(std::string name)
 {
@@ -129,11 +147,10 @@ void validateNotAlreadyDefined(std::string name)
 void createAndPushSymbol(std::string name, Type type)
 {
 	T_Symbol symbol;
-	//symbol.name = name;
+	symbol.name = name;
 	symbol.type = type;
 	//symbol.offset = 
-	SymbolTable table;
-	m_stScopeStack.push_front(table);
+
 	m_stScopeStack.front().addSymbol(symbol);
 }
 
@@ -145,5 +162,6 @@ int main()
 int yyerror(const char * message)
 {
 	cout<<"Parse error: "<<message<<endl;
+	///maybe pop stack here
 	exit(0);
 }
