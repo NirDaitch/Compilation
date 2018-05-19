@@ -64,9 +64,9 @@ Statements	:	Statement
 			|	Statements	Statement
 
 Statement	:	LBRACE	Statements	RBRACE
-			|	Type	ID	SC 	{$2.type = $1.type; cout << "found int name: " << $2.name << " type: " << $2.type << endl;}
+			|	Type	ID	SC 	{$2.type = $1.type; cout << "found var name: " << $2.name << " type: " << $2.type << endl;}
 			|	Type	ID	ASSIGN	Exp	SC	
-			|	Type	ID	LBRACK	NUM	RBRACK	SC 
+			|	Type	ID	LBRACK	NUM	RBRACK	SC {$2.type = $1.type; cout << "found int name: " << $2.name << " type: " << $2.type << endl;}
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC 
 			|	ID	ASSIGN	Exp	SC
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC
@@ -114,6 +114,9 @@ Exp 		:	LPAREN Exp RPAREN
 
 
 %%
+
+
+
 
 int main()
 {		
