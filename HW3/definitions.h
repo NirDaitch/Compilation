@@ -57,9 +57,9 @@ class T_Symbol {
 
 
 class SymbolTable {
-	std::list<T_Symbol> lstSymbolTable;
 	public:
-	
+	std::list<T_Symbol> lstSymbolTable;
+
 	void addSymbol(const T_Symbol& symbol)
 	{
 		//cout << "name: " << symbol.name << endl;
