@@ -64,9 +64,9 @@ Statements	:	Statement
 			|	Statements	Statement
 
 Statement	:	LBRACE	Statements	RBRACE
-			|	Type	ID	SC
-			|	Type	ID	ASSIGN	Exp	SC
-			|	Type	ID	LBRACK	NUM	RBRACK	SC
+			|	Type	ID	SC 	
+			|	Type	ID	ASSIGN	Exp	SC	
+			|	Type	ID	LBRACK	NUM	RBRACK	SC {$2.type = Type_INT;}
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC
 			|	ID	ASSIGN	Exp	SC
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC
