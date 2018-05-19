@@ -13,6 +13,12 @@
 	int m_iWhileCounter = 0;
 	ScopeStack m_stScopeStack;
 	int m_iCurrentOffset = 0;
+	int m_iCurrentFuncOffset=-1;
+
+	std::vector<std::string>  TYPES_TO_STRING;
+	
+	  
+	
 	
 	///////// OUR FUNCTIONS DEFINITIONS//////////
 	void validateNotAlreadyDefined(std::string name);
@@ -93,6 +99,8 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 startWhile	: {m_iWhileCounter++;};
 endWhile	: {m_iWhileCounter--;};
 
+
+
 				
 Call 		:	ID LPAREN ExpList RPAREN
 			|  ID LPAREN RPAREN;
@@ -137,6 +145,16 @@ void start_Scope()
 
 void end_Scope()
 {
+	SymbolTable& top = m_stScopeStack.front();
+	if (top.lstSymbolTable.size() > 0) {
+
+		endScope();
+		for (std::list<T_Symbol>::iterator it=top.lstSymbolTable.begin(); it!=top.lstSymbolTable.end(); ++it) {
+			T_Symbol curr = *it;
+			printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
+			m_iCurrentOffset--;
+		}
+	}
 	m_stScopeStack.pop_front();
 }
 
@@ -152,11 +170,18 @@ void createAndPushSymbol(std::string name, Type type)
 	symbol.type = type;
 	symbol.offset = m_iCurrentOffset++;
 
+	//TODO: if its an array, offset should be +=arraysize
+
 	m_stScopeStack.front().addSymbol(symbol);
 }
 
 int main()
-{		
+{	TYPES_TO_STRING.push_back("INT");
+	TYPES_TO_STRING.push_back("BYTE");
+	TYPES_TO_STRING.push_back("STRING");
+	TYPES_TO_STRING.push_back("VOID");
+	TYPES_TO_STRING.push_back("B");
+	TYPES_TO_STRING.push_back("BOOL");
 	yyparse();
 }
 
