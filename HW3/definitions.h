@@ -15,7 +15,7 @@ typedef enum {
 } Type;
 
 typedef struct {
-	int id;
+	std::string name;
     Type type;
     
 } EXP_ATTRIBUTE;

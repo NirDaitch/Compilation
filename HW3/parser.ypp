@@ -71,8 +71,8 @@ Statement	:	LBRACE	Statements	RBRACE
 			|	ID	ASSIGN	Exp	SC
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC
 			|	Call SC
-			|	RETURN  SC {cout<<"normal return. $$=" << $$.id << "$1="<<$1.id << "$2="<<$2.id  << endl;}
-			|	RETURN  Exp SC {cout<<"normal return. $$=" << $$.id << "$1="<<$1.id << "$2="<<$2.id <<"$3"<<$3.id << endl;}
+			|	RETURN  SC
+			|	RETURN  Exp SC
 			| 	IF LPAREN Exp RPAREN Statement
 			|   IF LPAREN Exp RPAREN Statement ELSE Statement
 			|	WHILE startWhile LPAREN Exp RPAREN Statement endWhile

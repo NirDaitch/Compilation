@@ -4,6 +4,7 @@
 
 
 #include <stdlib.h>
+#include <string>
 #include "definitions.h"
 #include "parser.tab.hpp"
 #include "output.hpp"
@@ -34,12 +35,12 @@ or 										return OR;
 not 									return NOT;
 true 									return TRUE;
 false 									return FALSE;
-return 									{yylval.id = 666; return RETURN;}	;								
+return 									{yylval.name = string("return"); return RETURN;}	;								
 if 										return IF;
 else 									return ELSE;
 while 									return WHILE;
 break 									return BREAK;
-\; 										return SC;
+\; 										{ yylval.name = string("sc"); return SC;};
 \, 										return COMMA;
 \( 										return LPAREN;
 \) 										return RPAREN;
