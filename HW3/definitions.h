@@ -38,8 +38,7 @@ class T_Symbol {
 	public:
 	std::string name;
     Type type;
-	
-	int offset; /// TODO: should it be here or inside SymbolTable?
+	int offset;
 	
 	T_Symbol() 
 	{

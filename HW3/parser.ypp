@@ -12,6 +12,7 @@
 	///////// OUR GLOBAL VARS DEFINITIONS//////////
 	int m_iWhileCounter = 0;
 	ScopeStack m_stScopeStack;
+	int m_iCurrentOffset = 0;
 	
 	///////// OUR FUNCTIONS DEFINITIONS//////////
 	void validateNotAlreadyDefined(std::string name);
@@ -149,7 +150,7 @@ void createAndPushSymbol(std::string name, Type type)
 	T_Symbol symbol;
 	symbol.name = name;
 	symbol.type = type;
-	//symbol.offset = 
+	symbol.offset = m_iCurrentOffset++;
 
 	m_stScopeStack.front().addSymbol(symbol);
 }
