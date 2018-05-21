@@ -4,6 +4,7 @@
 
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string>
 #include "definitions.h"
 #include "parser.tab.hpp"
@@ -57,7 +58,7 @@ break 									{								return BREAK;};
 (\+|-) 									{					 			return BINOP_2;};
 ([a-zA-Z][a-zA-Z0-9]*) 					{yylval.name = string(yytext); 	return ID;};
 										
-(0|[1-9][0-9]*) 						{yylval.type = Type_INT; 		return NUM;};
+(0|[1-9][0-9]*) 						{yylval.value=atoi(yytext); yylval.type = Type_INT; return NUM;};
 \"([^\n\r\"\\]|\\[rnt"\\])+\" 			{yylval.type = Type_STRING; 	return STRING;};
 
 {whitespace}                     ;

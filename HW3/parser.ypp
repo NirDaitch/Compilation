@@ -23,15 +23,20 @@
 	
 	///////// OUR FUNCTIONS DEFINITIONS//////////
 	void validateNotAlreadyDefined(std::string name);
-	void createAndPushSymbol(std::string name, Type type);
+	void validateDefined(std::string name, bool isVariable);
 	void validateAssignment(Type lhs, Type rhs);
+	Type validateAndGetTypeByName(std::string name);
+
+	void createAndPushSymbol(std::string name, Type type, int size);
+	
 	void start_Scope();
 	void end_Scope();
+
 	void isBoolean(Type t);
 	void isIntOrByte(Type t);
-	Type getTypeBinop(Type t1, Type t2);
-	Type validateAndGetTypeByName(std::string name);
 	
+	
+	Type getTypeBinop(Type t1, Type t2);
 	T_Symbol getSymbol(std::string name);
 %}
 
@@ -88,18 +93,18 @@ Statements	:	Statement
 			|	Statements	Statement
 
 Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
-			|	Type	ID	SC 	{validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type);}
-			|	Type	ID	ASSIGN	Exp	SC	{validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type);}
-			|	Type	ID	LBRACK	NUM	RBRACK	SC 
-			|	Type	ID	LBRACK	NUM	B 	RBRACK SC 
+			|	Type	ID	SC 	{validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
+			|	Type	ID	ASSIGN	Exp	SC	{validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
+			|	Type	ID	LBRACK	NUM	RBRACK	SC {validateNotAlreadyDefined($2.name); isIntOrByte($4.type);  createAndPushSymbol($2.name, $1.type,$4.value); }
+			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {validateNotAlreadyDefined($2.name); isIntOrByte($4.type);  createAndPushSymbol($2.name,Type_BYTE,$4.value); }
 			|	ID	ASSIGN	Exp	SC {validateAssignment(validateAndGetTypeByName($1.name), $3.type);}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC
 			|	Call SC
 			|	RETURN  SC
 			|	RETURN  Exp SC
-			| 	IF LPAREN Exp RPAREN Statement
-			|   IF LPAREN Exp RPAREN Statement ELSE Statement
-			|	WHILE startWhile LPAREN Exp RPAREN Statement endWhile
+			| 	IF LPAREN Exp_boolean RPAREN Statement
+			|   IF LPAREN Exp_boolean RPAREN Statement ELSE Statement
+			|	WHILE startWhile LPAREN Exp_boolean RPAREN Statement endWhile
 			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(1);}}
 			;
 			
@@ -136,7 +141,11 @@ Exp 		:	LPAREN Exp RPAREN
 			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
 			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
 			| 	Exp RELOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
-			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL;};
+			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL;}
+			;
+
+Exp_boolean	:   Exp {isBoolean($1.type);}
+			;
 
 ScopeStart	:	{start_Scope();}
 			;
@@ -182,7 +191,7 @@ Type getTypeBinop(Type t1, Type t2)
 
 void isBoolean(Type t)
 {
-	//TODO should we verify types are identical?
+	
 	if (t != Type_BOOL)
 	{
 		errorMismatch(yylineno);
@@ -235,21 +244,86 @@ void end_Scope()
 	m_stScopeStack.pop_front();
 }
 
+
+
 void validateNotAlreadyDefined(std::string name)
 {
-	///TODO: implement
+	
+	T_Symbol result=getSymbol(name);
+	if(result.type!=__Type_INVALID)
+	{
+		//if type is not invalid, symbol exists
+		//, bad.
+		errorDef(yylineno, name);	
+		exit(0);
+	}	
+	
 }
 
-void createAndPushSymbol(std::string name, Type type)
+
+//will return error if its not defined. 
+void validateDefined(std::string name, bool isVariable) 
+{
+	T_Symbol result=getSymbol(name);
+	if(result.type==__Type_INVALID)
+	{
+		//doesnt exist, return error
+		if(isVariable==true)
+		{
+			errorUndef(yylineno, name);	
+		}
+		else
+		{
+			errorUndefFunc(yylineno, name);
+		}		
+		exit(0);
+	}
+
+}
+
+void createAndPushSymbol(std::string name, Type type, int size)
 {
 	T_Symbol symbol;
 	symbol.name = name;
 	symbol.type = type;
 	symbol.offset = m_iCurrentOffset++;
+	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
 
-	//TODO: if its an array, offset should be +=arraysize
+
+	if(size>-1)//its an array!
+	{
+		symbol.Type_ARRAY_SIZE=size;		
+		m_iCurrentOffset+=size-1;
+	}
 
 	m_stScopeStack.front().addSymbol(symbol);
+}
+
+
+//if the element doesnt exist, returns a symbol with __Type_INVALID type
+T_Symbol getSymbol(std::string name)
+{
+	for (std::list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
+	{
+		SymbolTable& currentTable = *it_st;
+		if (currentTable.lstSymbols.size() > 0) {
+			for (std::list<T_Symbol>::iterator it=currentTable.lstSymbols.begin(); it!=currentTable.lstSymbols.end(); ++it)
+			{
+				T_Symbol curr = *it;
+				if(name == curr.name)
+				{
+					return curr;
+				}
+			}
+			
+		}
+	}
+
+
+	T_Symbol symbol;
+	symbol.type=__Type_INVALID;
+	symbol.name = "baad";	
+	return symbol;
 }
 
 int main()

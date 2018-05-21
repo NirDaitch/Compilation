@@ -24,13 +24,14 @@ class EXP_ATTRIBUTE {
 	public:
 	std::string name;
     Type type;
+    int value;
 	
-	int Type_ARRAY_SIZE;
+	
 	
 	EXP_ATTRIBUTE() 
 	{
-		this->name = "";
-		this->Type_ARRAY_SIZE = -1;
+		this->name = "";		
+		this->value=-1;
 	};
 	~EXP_ATTRIBUTE(){};
 };
@@ -40,6 +41,7 @@ class T_Symbol {
 	std::string name;
     Type type;
 	int offset;
+	int Type_ARRAY_SIZE;
 	
 	T_Symbol() 
 	{
@@ -51,6 +53,7 @@ class T_Symbol {
 		this->name = s.name;
 		this->type = s.type;
 		this->offset = s.offset;
+		this->Type_ARRAY_SIZE = -1;
 	};
 	
 	~T_Symbol(){};
