@@ -1,3 +1,4 @@
+
 %{
 	#include <iostream>
 	#include "definitions.h"
@@ -85,7 +86,7 @@ Formals		:	FormalsList
 FormalsList	:	FormalDecl
 			|	FormalDecl	COMMA	FormalsList;
 				
-FormalDecl	:	Type	ID
+FormalDecl	:	Type	ID 
 			|	Type	ID	LBRACK	NUM	RBRACK 
 			|	Type	ID	LBRACK	NUM		B	RBRACK;
 				
@@ -97,8 +98,8 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	ASSIGN	Exp	SC	{validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC {validateNotAlreadyDefined($2.name); isIntOrByte($4.type);  createAndPushSymbol($2.name, $1.type,$4.value); }
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {validateNotAlreadyDefined($2.name); isIntOrByte($4.type);  createAndPushSymbol($2.name,Type_BYTE,$4.value); }
-			|	ID	ASSIGN	Exp	SC {validateAssignment(validateAndGetTypeByName($1.name), $3.type);}
-			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC
+			|	ID	ASSIGN	Exp	SC { validateDefined($1.name,true);  validateAssignment(validateAndGetTypeByName($1.name),$3.type);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name), $6.type);}
 			|	Call SC
 			|	RETURN  SC
 			|	RETURN  Exp SC
@@ -211,6 +212,7 @@ void isIntOrByte(Type t)
 
 void validateAssignment(Type lhs, Type rhs)
 {
+	//TODO- if its an array, do we need to check that the assignment is done to a valid position? a[5] not overflowing)
 	//cout << "lhs type: " << lhs << "rhs type: " << rhs << endl;
 	if (lhs != rhs)
 	{
