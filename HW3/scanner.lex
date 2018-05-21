@@ -57,8 +57,8 @@ break 									{								return BREAK;};
 (\+|-) 									{					 			return BINOP_2;};
 ([a-zA-Z][a-zA-Z0-9]*) 					{yylval.name = string(yytext); 	return ID;};
 										
-(0|[1-9][0-9]*) 						{return NUM;};
-\"([^\n\r\"\\]|\\[rnt"\\])+\" 			{yylval.name = string("string"); return STRING;};
+(0|[1-9][0-9]*) 						{yylval.type = Type_INT; 		return NUM;};
+\"([^\n\r\"\\]|\\[rnt"\\])+\" 			{yylval.type = Type_STRING; 	return STRING;};
 
 {whitespace}                     ;
 

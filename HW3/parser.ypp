@@ -23,6 +23,7 @@
 	///////// OUR FUNCTIONS DEFINITIONS//////////
 	void validateNotAlreadyDefined(std::string name);
 	void createAndPushSymbol(std::string name, Type type);
+	void validateAssignment(Type lhs, Type rhs);
 	void start_Scope();
 	void end_Scope();
 %}
@@ -80,7 +81,7 @@ Statements	:	Statement
 
 Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	SC 	{validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type);}
-			|	Type	ID	ASSIGN	Exp	SC	
+			|	Type	ID	ASSIGN	Exp	SC	{validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type);}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC 
 			|	ID	ASSIGN	Exp	SC
@@ -116,8 +117,8 @@ Exp 		:	LPAREN Exp RPAREN
 			|	ID LBRACK Exp RBRACK
 			|	ID
 			|	Call
-			|	NUM
-			| 	NUM B
+			|	NUM			
+			| 	NUM B			{ $$.type = Type_BYTE;}
 			| 	STRING
 			|	TRUE
 			|	FALSE
@@ -136,6 +137,16 @@ ScopeEnd	:	{end_Scope();}
 			;
 
 %%
+
+void validateAssignment(Type lhs, Type rhs)
+{
+	cout << "lhs type: " << lhs << "rhs type: " << rhs << endl;
+	if (lhs != rhs)
+	{
+		errorMismatch(yylineno);
+		exit(0);
+	}
+}
 
 void start_Scope()
 {
