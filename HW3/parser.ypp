@@ -106,7 +106,7 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			| 	IF LPAREN Exp_boolean RPAREN Statement
 			|   IF LPAREN Exp_boolean RPAREN Statement ELSE Statement
 			|	WHILE startWhile LPAREN Exp_boolean RPAREN Statement endWhile
-			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(1);}}
+			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}} endWhile
 			;
 			
 
