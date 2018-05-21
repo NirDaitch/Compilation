@@ -77,8 +77,9 @@ Funcs		:	FuncDecl	Funcs
 
 FuncDecl	:	RetType	ID	LPAREN	Formals RPAREN	LBRACE ScopeStart Statements ScopeEnd	RBRACE ; 
 
-RetType		:	Type
-			| 	VOID;
+RetType		:	Type {$$.type=$1.type;}
+			| 	VOID {$$.type=Type_VOID;}
+			;
 
 Formals		:	FormalsList
 			|	;
@@ -127,8 +128,8 @@ Type		:	INT		{ $$.type = Type_INT;}
 			|	BYTE	{ $$.type = Type_BYTE;}
 			|	BOOL	{ $$.type = Type_BOOL;};
 			
-Exp 		:	LPAREN Exp RPAREN
-			|	ID LBRACK Exp RBRACK 
+Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name); isIntOrByte($3.type); }
 			|	ID				{$$.type = validateAndGetTypeByName($1.name);}
 			|	Call
 			|	NUM				{ $$.type = Type_INT;}
@@ -339,7 +340,7 @@ int main()
 
 int yyerror(const char * message)
 {
-	cout<<"Parse error: "<<message<<endl;
+	errorLex(yylineno);
 	///maybe pop stack here
 	exit(0);
 }
