@@ -8,6 +8,7 @@
 
 #define YYSTYPE EXP_ATTRIBUTE
 
+
 using namespace std;
 
 typedef enum {
@@ -15,8 +16,8 @@ typedef enum {
     Type_BYTE,
     Type_STRING,
     Type_VOID,
-    Type_B,
-    Type_BOOL
+    Type_BOOL,
+	__Type_INVALID
 } Type;
 
 class EXP_ATTRIBUTE {
@@ -58,14 +59,14 @@ class T_Symbol {
 
 class SymbolTable {
 	public:
-	std::list<T_Symbol> lstSymbolTable;
+	std::list<T_Symbol> lstSymbols;
 
 	void addSymbol(const T_Symbol& symbol)
 	{
-		//cout << "name: " << symbol.name << endl;
-		//cout << "type: " << symbol.type << endl;
+		cout << "name: " << symbol.name << endl;
+		cout << "type: " << symbol.type << endl;
 		
-		lstSymbolTable.push_back(symbol);
+		lstSymbols.push_back(symbol);
 	}
 	
 	SymbolTable() 

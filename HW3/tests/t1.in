@@ -1,12 +1,7 @@
-void printOk(bool isOk) {
-    if (isOk) print("ok");
-}
-
 void main()
 {
-    int x = 4;
+    int x = 400;
     byte y = 100 b;
-    printOk(x>y);
-    int z;
+    byte z= x*y;
 	return;
 }

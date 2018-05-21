@@ -4,7 +4,8 @@
 	#include "output.hpp"
 	#include <stdio.h>
 	using namespace output;
-	 
+
+	
 	extern int yylineno;
 	extern int yylex();
 	int yyerror(const char *);
@@ -26,6 +27,12 @@
 	void validateAssignment(Type lhs, Type rhs);
 	void start_Scope();
 	void end_Scope();
+	void isBoolean(Type t);
+	void isIntOrByte(Type t);
+	Type getTypeBinop(Type t1, Type t2);
+	Type validateAndGetTypeByName(std::string name);
+	
+	T_Symbol getSymbol(std::string name);
 %}
 
 %token VOID INT BYTE RETURN B SC COMMA ID STRING TRUE FALSE
@@ -62,7 +69,8 @@ Program		:	Funcs;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	RetType	ID	LPAREN	Formals	RPAREN	LBRACE ScopeStart Statements ScopeEnd	RBRACE;
+FuncDecl	:	RetType	ID	LPAREN	Formals RPAREN	LBRACE ScopeStart Statements ScopeEnd	RBRACE ; 
+
 RetType		:	Type
 			| 	VOID;
 
@@ -109,26 +117,26 @@ Call 		:	ID LPAREN ExpList RPAREN
 ExpList 	:	Exp
 			|	Exp COMMA ExpList;
 			
-Type		:	INT
-			|	BYTE
-			|	BOOL;
+Type		:	INT		{ $$.type = Type_INT;}
+			|	BYTE	{ $$.type = Type_BYTE;}
+			|	BOOL	{ $$.type = Type_BOOL;};
 			
 Exp 		:	LPAREN Exp RPAREN
-			|	ID LBRACK Exp RBRACK
-			|	ID
+			|	ID LBRACK Exp RBRACK 
+			|	ID				{$$.type = validateAndGetTypeByName($1.name);}
 			|	Call
-			|	NUM			
+			|	NUM				{ $$.type = Type_INT;}
 			| 	NUM B			{ $$.type = Type_BYTE;}
-			| 	STRING
-			|	TRUE
-			|	FALSE
-			|	Exp BINOP_1 Exp
-			|	Exp BINOP_2 Exp
-			|	Exp AND Exp
-			|	Exp OR Exp
-			| 	Exp RELOP_1 Exp
-			| 	Exp RELOP_2 Exp
-			|	NOT Exp;
+			| 	STRING			{ $$.type = Type_BOOL;}
+			|	TRUE			{ $$.type = Type_BOOL;}
+			|	FALSE			{ $$.type = Type_BOOL;}
+			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
+			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
+			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
+			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
+			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
+			| 	Exp RELOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
+			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL;};
 
 ScopeStart	:	{start_Scope();}
 			;
@@ -138,11 +146,69 @@ ScopeEnd	:	{end_Scope();}
 
 %%
 
+Type validateAndGetTypeByName(std::string name)
+{
+	for (std::list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
+	{
+		SymbolTable& currentTable = *it_st;
+		if (currentTable.lstSymbols.size() > 0) {
+			for (std::list<T_Symbol>::iterator it=currentTable.lstSymbols.begin(); it!=currentTable.lstSymbols.end(); ++it)
+			{
+				T_Symbol curr = *it;
+				if(name == curr.name)
+				{
+					return curr.type;
+				}
+			}
+			
+		}
+	}
+	
+	errorUndef(yylineno, name);
+	exit(0);
+	return (Type) -1;
+}
+
+Type getTypeBinop(Type t1, Type t2)
+{
+	if (t1 == t2)
+	{
+		//cout << "binop type is: " << t1 << endl;
+		return t1;
+	}
+	//cout << "binop type is: " << Type_INT << endl;
+	return Type_INT;
+}
+
+void isBoolean(Type t)
+{
+	//TODO should we verify types are identical?
+	if (t != Type_BOOL)
+	{
+		errorMismatch(yylineno);
+		exit(0);
+	}
+}
+
+void isIntOrByte(Type t)
+{
+	//cout << "t type: " << t << endl;
+	if (t != Type_INT && t != Type_BYTE)
+	{
+		errorMismatch(yylineno);
+		exit(0);
+	}
+}
+
 void validateAssignment(Type lhs, Type rhs)
 {
-	cout << "lhs type: " << lhs << "rhs type: " << rhs << endl;
+	//cout << "lhs type: " << lhs << "rhs type: " << rhs << endl;
 	if (lhs != rhs)
 	{
+		if (lhs == Type_INT && rhs == Type_BYTE)
+		{
+			return;
+		}
 		errorMismatch(yylineno);
 		exit(0);
 	}
@@ -157,10 +223,10 @@ void start_Scope()
 void end_Scope()
 {
 	SymbolTable& top = m_stScopeStack.front();
-	if (top.lstSymbolTable.size() > 0) {
+	if (top.lstSymbols.size() > 0) {
 
 		endScope();
-		for (std::list<T_Symbol>::iterator it=top.lstSymbolTable.begin(); it!=top.lstSymbolTable.end(); ++it) {
+		for (std::list<T_Symbol>::iterator it=top.lstSymbols.begin(); it!=top.lstSymbols.end(); ++it) {
 			T_Symbol curr = *it;
 			printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
 			m_iCurrentOffset--;
@@ -171,7 +237,7 @@ void end_Scope()
 
 void validateNotAlreadyDefined(std::string name)
 {
-
+	///TODO: implement
 }
 
 void createAndPushSymbol(std::string name, Type type)
@@ -191,7 +257,6 @@ int main()
 	TYPES_TO_STRING.push_back("BYTE");
 	TYPES_TO_STRING.push_back("STRING");
 	TYPES_TO_STRING.push_back("VOID");
-	TYPES_TO_STRING.push_back("B");
 	TYPES_TO_STRING.push_back("BOOL");
 	yyparse();
 }

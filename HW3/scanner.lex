@@ -28,13 +28,13 @@ whitespace		([\t\n \x0D\x0A])
 void 									{yylval.type = Type_VOID;		return VOID;};
 int 									{yylval.type = Type_INT;		return INT;};
 byte 									{yylval.type = Type_BYTE;		return BYTE;};
-b 										{yylval.type = Type_B;			return B;};
+b 										{								return B;};
 bool 									{yylval.type = Type_BOOL;		return BOOL;};
 and 									{								return AND;};
 or 										{								return OR;};
 not 									{								return NOT;};
-true 									{								return TRUE;};
-false 									{								return FALSE;};
+true 									{yylval.type = Type_BOOL;		return TRUE;};
+false 									{yylval.type = Type_BOOL;		return FALSE;};
 return 									{								return RETURN;};								
 if 										{								return IF;};
 else 									{								return ELSE;};
