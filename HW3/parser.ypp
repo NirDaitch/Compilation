@@ -176,7 +176,7 @@ void validateAssignmentArray(std::string arrName, int index, Type rhsType, int n
 	T_Symbol result=getSymbol(arrName);
 	if(result.type ==__Type_INVALID)
 	{
-		errorDef(yylineno, arrName);	
+		errorUnDef(yylineno, arrName);	
 		exit(0);
 	}
 	validateAssignment(result.type, rhsType);
