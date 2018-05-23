@@ -1,7 +1,10 @@
 void main()
 {
-    int x = 400;
+    byte x[8];
     byte y = 100 b;
-    byte z= x*y;
+	int z[8];
+    z[3] = y;
+    z[5] = 44;
+    z[4] = "dfgdfg";
 	return;
 }

@@ -24,14 +24,13 @@ class EXP_ATTRIBUTE {
 	public:
 	std::string name;
     Type type;
-    int value;
-	
+    int num_value;
 	
 	
 	EXP_ATTRIBUTE() 
 	{
 		this->name = "";		
-		this->value=-1;
+		this->num_value=-1;
 	};
 	~EXP_ATTRIBUTE(){};
 };

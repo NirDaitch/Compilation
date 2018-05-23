@@ -26,6 +26,7 @@
 	void validateNotAlreadyDefined(std::string name);
 	void validateDefined(std::string name, bool isVariable);
 	void validateAssignment(Type lhs, Type rhs);
+	void validateAssignmentArray(std::string arrName, int index, Type rhsType, int num_value);
 	Type validateAndGetTypeByName(std::string name);
 
 	void createAndPushSymbol(std::string name, Type type, int size);
@@ -35,6 +36,7 @@
 
 	void isBoolean(Type t);
 	void isIntOrByte(Type t);
+	void validateArraySize(int numValue, std::string name);
 	
 	
 	Type getTypeBinop(Type t1, Type t2);
@@ -95,19 +97,19 @@ Statements	:	Statement
 			|	Statements	Statement
 
 Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
-			|	Type	ID	SC 	{validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
-			|	Type	ID	ASSIGN	Exp	SC	{validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
-			|	Type	ID	LBRACK	NUM	RBRACK	SC {validateNotAlreadyDefined($2.name); isIntOrByte($4.type);  createAndPushSymbol($2.name, $1.type,$4.value); }
-			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {validateNotAlreadyDefined($2.name); isIntOrByte($4.type);  createAndPushSymbol($2.name,Type_BYTE,$4.value); }
+			|	Type	ID	SC 	{ validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
+			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
+			|	Type	ID	LBRACK	NUM	RBRACK	SC { validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
+			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,Type_BYTE,$4.num_value); }
 			|	ID	ASSIGN	Exp	SC { validateDefined($1.name,true);  validateAssignment(validateAndGetTypeByName($1.name),$3.type);}
-			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name), $6.type);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignmentArray($1.name,  $3.num_value, $6.type, $6.num_value);}
 			|	Call SC
 			|	RETURN  SC
 			|	RETURN  Exp SC
 			| 	IF LPAREN Exp_boolean RPAREN Statement
 			|   IF LPAREN Exp_boolean RPAREN Statement ELSE Statement
 			|	WHILE startWhile LPAREN Exp_boolean RPAREN Statement endWhile
-			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}} endWhile
+			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}}
 			;
 			
 
@@ -129,11 +131,11 @@ Type		:	INT		{ $$.type = Type_INT;}
 			|	BOOL	{ $$.type = Type_BOOL;};
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
-			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name); isIntOrByte($3.type); }
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name); isIntOrByte($3.type); /*TODO make exp type array*/}
 			|	ID				{$$.type = validateAndGetTypeByName($1.name);}
 			|	Call
-			|	NUM				{ $$.type = Type_INT;}
-			| 	NUM B			{ $$.type = Type_BYTE;}
+			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
+			| 	NUM B			{ $$.type = Type_BYTE; $$.num_value = $1.num_value;}
 			| 	STRING			{ $$.type = Type_BOOL;}
 			|	TRUE			{ $$.type = Type_BOOL;}
 			|	FALSE			{ $$.type = Type_BOOL;}
@@ -156,6 +158,34 @@ ScopeEnd	:	{end_Scope();}
 			;
 
 %%
+
+void validateArraySize(int numValue, std::string name)
+{
+	if (numValue <= 0 || numValue >= 256)
+	{
+		errorInvalidArraySize(yylineno, name);
+	}
+}
+
+void validateAssignmentArray(std::string arrName, int index, Type rhsType, int num_value)
+{
+	if (num_value == -1) // cannot be -1
+	{
+		errorMismatch(yylineno);
+	}
+	T_Symbol result=getSymbol(arrName);
+	if(result.type ==__Type_INVALID)
+	{
+		errorDef(yylineno, arrName);	
+		exit(0);
+	}
+	validateAssignment(result.type, rhsType);
+	if (result.Type_ARRAY_SIZE <= index || index < 0)
+	{
+		/// do something?
+	}
+	
+}
 
 Type validateAndGetTypeByName(std::string name)
 {
@@ -325,7 +355,7 @@ T_Symbol getSymbol(std::string name)
 
 	T_Symbol symbol;
 	symbol.type=__Type_INVALID;
-	symbol.name = "baad";	
+	symbol.name = "__bad__";	
 	return symbol;
 }
 
