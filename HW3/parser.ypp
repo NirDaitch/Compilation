@@ -131,7 +131,7 @@ Type		:	INT		{ $$.type = Type_INT;}
 			|	BOOL	{ $$.type = Type_BOOL;};
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
-			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name); isIntOrByte($3.type); /*TODO make exp type array*/}
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name); isIntOrByte($3.type);}
 			|	ID				{$$.type = validateAndGetTypeByName($1.name);}
 			|	Call
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
