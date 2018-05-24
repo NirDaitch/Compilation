@@ -37,6 +37,7 @@
 	void isBoolean(Type t);
 	void isIntOrByte(Type t);
 	void validateArraySize(int numValue, std::string name);
+	void validateAssignmentLHSisArray(Type lhs, Type rhs, std::string rhs_name);
 	
 	
 	Type getTypeBinop(Type t1, Type t2);
@@ -102,7 +103,7 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	LBRACK	NUM	RBRACK	SC { validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,Type_BYTE,$4.num_value); }
 			|	ID	ASSIGN	Exp	SC { validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type);}
-			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name), $6.type);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignmentLHSisArray(validateAndGetTypeByName($1.name), $6.type,$6.name);}
 			|	Call SC
 			|	RETURN  SC
 			|	RETURN  Exp SC
@@ -226,12 +227,16 @@ void validateAssignmentDynamic(std::string lhsName, std::string rhsName, Type rh
 	T_Symbol lhsSymbol=getSymbol(lhsName);
 	if(lhsSymbol.type == __Type_INVALID)
 	{
+		//should never reach here because we called validateDefined on the lhs symbol before this func
 
-		errorDef(yylineno, lhsName);	
+		//you called the wrong error again! i fixed it.
+		errorUndef(yylineno, lhsName);	
 		exit(0);
 	}
 
 	validateAssignment(lhsSymbol.type, rhsType);
+
+
 	T_Symbol rhsSymbol=getSymbol(rhsName);
 
 	if (lhsSymbol.Type_ARRAY_SIZE != -1)
@@ -258,8 +263,7 @@ void validateAssignmentDynamic(std::string lhsName, std::string rhsName, Type rh
 
 void validateAssignment(Type lhs, Type rhs)
 {
-	///TODO- if its an array, do we need to check that the assignment is done to a valid position? a[5] not overflowing)
-	/// no need. this is only at runtime! will remove this TODO later :)
+	
 
 	if (lhs != rhs)
 	{
@@ -374,6 +378,52 @@ T_Symbol getSymbol(std::string name)
 	symbol.name = "__bad__";	
 	return symbol;
 }
+
+void validateAssignmentLHSisArray(Type lhs, Type rhs, std::string rhs_name)
+{
+	T_Symbol rhsSymbol=getSymbol(rhs_name);
+	int rhs_size=rhsSymbol.Type_ARRAY_SIZE;//can be -1 if its not an array, or if rhs doesnt even exist
+	if(rhsSymbol.type == __Type_INVALID)
+	{		
+		//rhs might be an exp that just isn't defined (maybe its just TRUE for example)
+		//and that is actually ok.
+		//but if exp is 'x' but it wasn't defined, then its not ok. I don't know what to do..
+		
+		//errorUndef(yylineno, rhs_name);	
+		//exit(0);
+		//TODO: HELPME!
+	}
+	if(rhs_size==-1)
+	{
+		validateAssignment(lhs,rhs);
+		return;
+	}
+	else
+	{
+		validateAssignment(lhs,rhs);
+		//more stuff are needed! tod
+		//rhs is an array too, we need to check that rhs is an expression of the form x[y] (and not just x which is an array, called without any [])
+	//we need to forbid:
+	//int x[5]
+	//int y[5]
+	//x[4]=y;
+	//and allow x[4]=y[something];
+
+	//TODO. I DONTKNOW HOW TO DO THAT
+	
+	//code that works and does what we need
+	//...
+	//...
+
+	}
+
+	
+
+
+
+
+}
+
 
 int main()
 {	TYPES_TO_STRING.push_back("INT");
