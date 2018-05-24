@@ -1,0 +1,5 @@
+#!/bin/bash
+cp *.cpp *.h *.c *.hpp *.lex *.ypp ./HW3_TESTS/;
+cd HW3_TESTS/;
+./funMe ;
+cd -;
