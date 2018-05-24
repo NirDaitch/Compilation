@@ -102,7 +102,7 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	LBRACK	NUM	RBRACK	SC { validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,Type_BYTE,$4.num_value); }
 			|	ID	ASSIGN	Exp	SC { validateDefined($1.name,true);  validateAssignment(validateAndGetTypeByName($1.name),$3.type);}
-			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignmentArray($1.name,  $3.num_value, $6.type, $6.num_value);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignmentArray($1.name,  $3.num_value, $6.type);}
 			|	Call SC
 			|	RETURN  SC
 			|	RETURN  Exp SC
@@ -167,12 +167,8 @@ void validateArraySize(int numValue, std::string name)
 	}
 }
 
-void validateAssignmentArray(std::string arrName, int index, Type rhsType, int num_value)
+void validateAssignmentArray(std::string arrName, int index, Type rhsType)
 {
-	if (num_value == -1) // cannot be -1
-	{
-		errorMismatch(yylineno);
-	}
 	T_Symbol result=getSymbol(arrName);
 	if(result.type ==__Type_INVALID)
 	{
