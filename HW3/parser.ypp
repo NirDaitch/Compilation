@@ -28,7 +28,7 @@
 	void validateAssignment(Type lhs, Type rhs);
 	void validateAssignmentDynamic(std::string nameLHS, std::string rhsName, Type rhsType);
 	Type validateAndGetTypeByName(std::string name);
-
+	void checkByteSize(int value, std::string valueInStringForm);
 	void createAndPushSymbol(std::string name, Type type, int size);
 	
 	void start_Scope();
@@ -136,7 +136,7 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
 			|	ID				{$$.type = validateAndGetTypeByName($1.name);}
 			|	Call
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
-			| 	NUM B			{ $$.type = Type_BYTE; $$.num_value = $1.num_value;}
+			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value;}
 			| 	STRING			{ $$.type = Type_BOOL;}
 			|	TRUE			{ $$.type = Type_BOOL;}
 			|	FALSE			{ $$.type = Type_BOOL;}
@@ -417,10 +417,23 @@ void validateAssignmentLHSisArray(Type lhs, Type rhs, std::string rhs_name)
 
 	}
 
+
+
 	
 
 
 
+
+}
+
+
+void checkByteSize(int value, std::string valueInStringForm)
+{
+	if(value>255) 
+	{
+		errorByteTooLarge(yylineno,valueInStringForm); 
+		exit(0);
+	}
 
 }
 
