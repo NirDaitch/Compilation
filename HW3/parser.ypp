@@ -4,6 +4,8 @@
 	#include "definitions.h"
 	#include "output.hpp"
 	#include <stdio.h>
+	
+	using namespace std;
 	using namespace output;
 
 	
@@ -16,6 +18,8 @@
 	ScopeStack m_stScopeStack;
 	int m_iCurrentOffset = 0;
 	int m_iCurrentFuncOffset=-1;
+	vector<string> funcArgs;
+	vector<string> funcArgsNAMES;
 
 	std::vector<std::string>  TYPES_TO_STRING;
 	
@@ -30,7 +34,7 @@
 	Type validateAndGetTypeByName(std::string name);
 	void checkByteSize(int value, std::string valueInStringForm);
 	void createAndPushSymbol(std::string name, Type type, int size);
-	
+	void createAndPushSymbolFunc(std::string name, Type retType);
 	void start_Scope();
 	void end_Scope();
 
@@ -78,7 +82,8 @@ Program		:	Funcs;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	RetType	ID	LPAREN	Formals RPAREN	LBRACE ScopeStart Statements ScopeEnd	RBRACE ; 
+FuncDecl	:	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($2.name);createAndPushSymbolFunc($2.name,$1.type);}	LBRACE ScopeStart Statements ScopeEnd	RBRACE {/*checkThatStatementsElementsWereDefinedAsFunctionParametersOrAlreadyDefinedInPrevScope*/} 
+			;
 
 RetType		:	Type {$$.type=$1.type;}
 			| 	VOID {$$.type=Type_VOID;}
@@ -90,9 +95,10 @@ Formals		:	FormalsList
 FormalsList	:	FormalDecl
 			|	FormalDecl	COMMA	FormalsList;
 				
-FormalDecl	:	Type	ID 
-			|	Type	ID	LBRACK	NUM	RBRACK 
-			|	Type	ID	LBRACK	NUM		B	RBRACK;
+FormalDecl	:	Type	ID {funcArgs.push_back(TYPES_TO_STRING[$1.type]);funcArgsNAMES.push_back($2.name);}
+			|	Type	ID	LBRACK	NUM	RBRACK {funcArgs.push_back(TYPES_TO_STRING[$1.type]);funcArgsNAMES.push_back($2.name);}
+			|	Type	ID	LBRACK	NUM		B	RBRACK {funcArgs.push_back(TYPES_TO_STRING[$1.type]);funcArgsNAMES.push_back($2.name);}
+			;
 				
 Statements	:	Statement
 			|	Statements	Statement
@@ -351,6 +357,41 @@ void createAndPushSymbol(std::string name, Type type, int size)
 
 	m_stScopeStack.front().addSymbol(symbol);
 }
+
+ void createAndPushSymbolFunc(std::string name, Type retType)
+ {
+	//TODO: make it work. implementation is probably wrong.
+	//because its hard to link the symbols that are created as the paremeters, with the function that they are associated with.
+
+// 	T_Symbol fsymbol;
+// 	fsymbol.name=name;
+// 	fsymbol.type=Type_FUNCTION;
+// 	fsymbol.offset=0; //TODO: maybe we need to put some other offset for a function??
+// 	fsymbol.retType=retType;
+// 	fsymbol.paramTypes=funcArgs;
+// 	cout<<"fsymbol.paramtypes: "<<fsymbol.paramTypes<<endl;
+// 	funcArgs.erase(funcArgs.begin(),funcArgs.end());//erasing the whole buffer, so its ready to hold the next function's parameters
+
+// 	//setting the offset of the parameters
+// 	int i=0;
+// 	for(auto&	it : funcArgsNAMES)
+// 	{
+// 		Type currType=stringToType(fsymbol.paramTypes[i]);
+// 		i++;
+// 		T_Symbol paramSymbol;
+// 		paramSymbol.name=it;
+// 		paramSymbol.type=currType;
+// 		paramSymbol.offset=m_iCurrentFuncOffset;
+// 		m_iCurrentFuncOffset--;
+// 		paramSymbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor	
+
+// 		m_stScopeStack.front().addSymbol(paramSymbol);
+
+// 	}
+// 	funcArgsNAMES.erase(funcArgsNAMES.begin(),funcArgsNAMES.end());//erasing the whole buffer, so its ready to hold the next function's parameters
+// 	m_iCurrentFuncOffset=-1; //reset the offset counter
+
+ }
 
 
 //if the element doesnt exist, returns a symbol with __Type_INVALID type
