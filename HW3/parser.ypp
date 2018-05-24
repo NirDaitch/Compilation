@@ -26,7 +26,7 @@
 	void validateNotAlreadyDefined(std::string name);
 	void validateDefined(std::string name, bool isVariable);
 	void validateAssignment(Type lhs, Type rhs);
-	void validateAssignmentArray(std::string arrName, int index, Type rhsType);
+	void validateAssignmentDynamic(std::string nameLHS, std::string rhsName, Type rhsType);
 	Type validateAndGetTypeByName(std::string name);
 
 	void createAndPushSymbol(std::string name, Type type, int size);
@@ -101,8 +101,8 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC { validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,Type_BYTE,$4.num_value); }
-			|	ID	ASSIGN	Exp	SC { validateDefined($1.name,true);  validateAssignment(validateAndGetTypeByName($1.name),$3.type);}
-			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignmentArray($1.name,  $3.num_value, $6.type);}
+			|	ID	ASSIGN	Exp	SC { validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name), $6.type);}
 			|	Call SC
 			|	RETURN  SC
 			|	RETURN  Exp SC
@@ -167,22 +167,6 @@ void validateArraySize(int numValue, std::string name)
 	}
 }
 
-void validateAssignmentArray(std::string arrName, int index, Type rhsType)
-{
-	T_Symbol result=getSymbol(arrName);
-	if(result.type ==__Type_INVALID)
-	{
-		errorUndef(yylineno, arrName);	
-		exit(0);
-	}
-	validateAssignment(result.type, rhsType);
-	if (result.Type_ARRAY_SIZE <= index || index < 0)
-	{
-		/// do something?
-	}
-	
-}
-
 Type validateAndGetTypeByName(std::string name)
 {
 	for (std::list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
@@ -237,16 +221,52 @@ void isIntOrByte(Type t)
 	}
 }
 
+void validateAssignmentDynamic(std::string lhsName, std::string rhsName, Type rhsType)
+{
+	T_Symbol lhsSymbol=getSymbol(lhsName);
+	if(lhsSymbol.type == __Type_INVALID)
+	{
+
+		errorDef(yylineno, lhsName);	
+		exit(0);
+	}
+
+	validateAssignment(lhsSymbol.type, rhsType);
+	T_Symbol rhsSymbol=getSymbol(rhsName);
+
+	if (lhsSymbol.Type_ARRAY_SIZE != -1)
+	{
+		/// lhs is an array
+
+		if(rhsSymbol.type == __Type_INVALID) 
+		{
+			///rhs is not even a variable
+			errorMismatch(yylineno);
+			exit(0);
+			return;
+		}
+
+		if (rhsSymbol.Type_ARRAY_SIZE != lhsSymbol.Type_ARRAY_SIZE)
+		{
+			errorMismatch(yylineno);
+			exit(0);
+		}
+		///both are arrays from same types (validated earlier) and same size, all good!
+	}
+	//// both are non-array and match
+}
+
 void validateAssignment(Type lhs, Type rhs)
 {
-	//TODO- if its an array, do we need to check that the assignment is done to a valid position? a[5] not overflowing)
-	//cout << "lhs type: " << lhs << "rhs type: " << rhs << endl;
+	///TODO- if its an array, do we need to check that the assignment is done to a valid position? a[5] not overflowing)
+	/// no need. this is only at runtime! will remove this TODO later :)
+
 	if (lhs != rhs)
 	{
 		if (lhs == Type_INT && rhs == Type_BYTE)
 		{
 			return;
-		}
+		}		
 		errorMismatch(yylineno);
 		exit(0);
 	}

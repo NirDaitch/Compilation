@@ -45,6 +45,7 @@ class T_Symbol {
 	T_Symbol() 
 	{
 		this->name = "";
+		this->Type_ARRAY_SIZE = -1;
 	};
 	
 	T_Symbol (const T_Symbol& s)
@@ -52,7 +53,7 @@ class T_Symbol {
 		this->name = s.name;
 		this->type = s.type;
 		this->offset = s.offset;
-		this->Type_ARRAY_SIZE = -1;
+		this->Type_ARRAY_SIZE = s.Type_ARRAY_SIZE;
 	};
 	
 	~T_Symbol(){};
@@ -65,8 +66,8 @@ class SymbolTable {
 
 	void addSymbol(const T_Symbol& symbol)
 	{
-		cout << "name: " << symbol.name << endl;
-		cout << "type: " << symbol.type << endl;
+		//cout << "name: " << symbol.name << endl;
+		//cout << "type: " << symbol.type << endl;
 		
 		lstSymbols.push_back(symbol);
 	}
