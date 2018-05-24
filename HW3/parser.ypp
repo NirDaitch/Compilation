@@ -26,7 +26,7 @@
 	void validateNotAlreadyDefined(std::string name);
 	void validateDefined(std::string name, bool isVariable);
 	void validateAssignment(Type lhs, Type rhs);
-	void validateAssignmentArray(std::string arrName, int index, Type rhsType, int num_value);
+	void validateAssignmentArray(std::string arrName, int index, Type rhsType);
 	Type validateAndGetTypeByName(std::string name);
 
 	void createAndPushSymbol(std::string name, Type type, int size);
@@ -172,7 +172,7 @@ void validateAssignmentArray(std::string arrName, int index, Type rhsType)
 	T_Symbol result=getSymbol(arrName);
 	if(result.type ==__Type_INVALID)
 	{
-		errorUnDef(yylineno, arrName);	
+		errorUndef(yylineno, arrName);	
 		exit(0);
 	}
 	validateAssignment(result.type, rhsType);
