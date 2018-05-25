@@ -19,12 +19,13 @@
 	ScopeStack m_stScopeStack;
 	map< string, Function > m_mpFunctionTable;
 	int m_iCurrentOffset = 0;
-	int m_iCurrentFuncOffset=-1;
-	
-	vector<string> funcArgs;
-	vector<string> funcArgsNAMES;
-
 	vector<string>  TYPES_TO_STRING;
+	
+	
+	////////////////CURRENT FUCNTION DATA///////////////
+	int m_iFUNCTION_CurrentOffset = 0;
+	list<T_Symbol> funcArgs;
+
 
 	///////// OUR FUNCTIONS DEFINITIONS//////////
 	void validateNotAlreadyDefined(string name);
@@ -34,8 +35,11 @@
 	Type validateAndGetTypeByName(string name);
 	void checkByteSize(int value, string valueInStringForm);
 	void createAndPushSymbol(string name, Type type, int size);
-	void createAndPushSymbolFunc(string name, Type retType);
+	
+	void createAndPushFunctionSymbol(string name, Type type, int size);
+	
 	void start_Scope();
+	void start_scope_function();
 	void end_Scope();
 
 	void isBoolean(Type t);
@@ -81,7 +85,7 @@ Program		:	Funcs;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($2.name);	createAndPushSymbolFunc($2.name,$1.type);}	LBRACE ScopeStart Statements ScopeEnd	RBRACE
+FuncDecl	:	{m_iFUNCTION_CurrentOffset = 0; funcArgs.clear();} RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($2.name);	createAndPushSymbolFunc($2.name,$1.type);}	LBRACE ScopeStartFunction Statements ScopeEnd	RBRACE
 			;
 
 RetType		:	Type {$$.type=$1.type;}
@@ -94,9 +98,9 @@ Formals		:	FormalsList
 FormalsList	:	FormalDecl
 			|	FormalDecl	COMMA	FormalsList;
 				
-FormalDecl	:	Type	ID {funcArgs.push_back(TYPES_TO_STRING[$1.type]);funcArgsNAMES.push_back($2.name);}
-			|	Type	ID	LBRACK	NUM	RBRACK {funcArgs.push_back(TYPES_TO_STRING[$1.type]);funcArgsNAMES.push_back($2.name);}
-			|	Type	ID	LBRACK	NUM		B	RBRACK {funcArgs.push_back(TYPES_TO_STRING[$1.type]);funcArgsNAMES.push_back($2.name);}
+FormalDecl	:	Type	ID {funcArgs.add(createFunctionSymbol($2.name, $1.type, -1));}
+			|	Type	ID	LBRACK	NUM	RBRACK {funcArgs.add(createFunctionSymbol($2.name, $1.type, $4));}
+			|	Type	ID	LBRACK	NUM		B	RBRACK {funcArgs.add(createFunctionSymbol($2.name, $1.type, $4));}
 			;
 				
 Statements	:	Statement
@@ -158,6 +162,9 @@ Exp_boolean	:   Exp {isBoolean($1.type);}
 			;
 
 ScopeStart	:	{start_Scope();}
+			;
+			
+ScopeStartFunction	:	{start_scope_function();}
 			;
 		
 ScopeEnd	:	{end_Scope();}
@@ -287,6 +294,16 @@ void start_Scope()
 	m_stScopeStack.push_front(newTable);
 }
 
+void start_scope_function()
+{
+	SymbolTable newTable;
+	for (list<T_Symbol>::iterator it=funcArgs.begin(); it!=funcArgs.end(); ++it) 
+	{
+		newTable.addSymbol(symbol);
+	}
+	m_stScopeStack.push_front(newTable);
+}
+
 void end_Scope()
 {
 	SymbolTable& top = m_stScopeStack.front();
@@ -339,6 +356,24 @@ void validateDefined(string name, bool isVariable)
 
 }
 
+void createAndPushFunctionSymbol(string name, Type type, int size)
+{
+	T_Symbol symbol;
+	symbol.name = name;
+	symbol.type = type;
+	symbol.offset = m_iFUNCTION_CurrentOffset++;
+	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
+
+
+	if(size>-1)//its an array!
+	{
+		symbol.Type_ARRAY_SIZE=size;		
+		m_iFUNCTION_CurrentOffset+=-(size-1);
+	}
+
+	funcArgs.push_back(symbol);
+}
+
 void createAndPushSymbol(string name, Type type, int size)
 {
 	T_Symbol symbol;
@@ -356,43 +391,6 @@ void createAndPushSymbol(string name, Type type, int size)
 
 	m_stScopeStack.front().addSymbol(symbol);
 }
-
- void createAndPushSymbolFunc(string name, Type retType)
- {
-	 
- }
-	//TODO: make it work. implementation is probably wrong.
-	//because its hard to link the symbols that are created as the paremeters, with the function that they are associated with.
-
-// 	T_Symbol fsymbol;
-// 	fsymbol.name=name;
-// 	fsymbol.type=Type_FUNCTION;
-// 	fsymbol.offset=0; //TODO: maybe we need to put some other offset for a function??
-// 	fsymbol.retType=retType;
-// 	fsymbol.paramTypes=funcArgs;
-// 	cout<<"fsymbol.paramtypes: "<<fsymbol.paramTypes<<endl;
-// 	funcArgs.erase(funcArgs.begin(),funcArgs.end());//erasing the whole buffer, so its ready to hold the next function's parameters
-
-// 	//setting the offset of the parameters
-// 	int i=0;
-// 	for(auto&	it : funcArgsNAMES)
-// 	{
-// 		Type currType=stringToType(fsymbol.paramTypes[i]);
-// 		i++;
-// 		T_Symbol paramSymbol;
-// 		paramSymbol.name=it;
-// 		paramSymbol.type=currType;
-// 		paramSymbol.offset=m_iCurrentFuncOffset;
-// 		m_iCurrentFuncOffset--;
-// 		paramSymbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor	
-
-// 		m_stScopeStack.front().addSymbol(paramSymbol);
-
-// 	}
-// 	funcArgsNAMES.erase(funcArgsNAMES.begin(),funcArgsNAMES.end());//erasing the whole buffer, so its ready to hold the next function's parameters
-// 	m_iCurrentFuncOffset=-1; //reset the offset counter
-
- 
 
 
 T_Symbol getSymbol(string name)
