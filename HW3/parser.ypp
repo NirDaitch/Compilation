@@ -4,6 +4,7 @@
 	#include "definitions.h"
 	#include "output.hpp"
 	#include <stdio.h>
+	#include <map>
 	
 	using namespace std;
 	using namespace output;
@@ -16,32 +17,34 @@
 	///////// OUR GLOBAL VARS DEFINITIONS//////////
 	int m_iWhileCounter = 0;
 	ScopeStack m_stScopeStack;
+	map< string, Function > m_mpFunctionTable;
 	int m_iCurrentOffset = 0;
 	int m_iCurrentFuncOffset=-1;
+	
 	vector<string> funcArgs;
 	vector<string> funcArgsNAMES;
 
-	std::vector<std::string>  TYPES_TO_STRING;
+	vector<string>  TYPES_TO_STRING;
 
 	///////// OUR FUNCTIONS DEFINITIONS//////////
-	void validateNotAlreadyDefined(std::string name);
-	void validateDefined(std::string name, bool isVariable);
+	void validateNotAlreadyDefined(string name);
+	void validateDefined(string name, bool isVariable);
 	void validateAssignment(Type lhs, Type rhs);
-	void validateAssignmentDynamic(std::string nameLHS, std::string rhsName, Type rhsType);
-	Type validateAndGetTypeByName(std::string name);
-	void checkByteSize(int value, std::string valueInStringForm);
-	void createAndPushSymbol(std::string name, Type type, int size);
-	void createAndPushSymbolFunc(std::string name, Type retType);
+	void validateAssignmentDynamic(string nameLHS, string rhsName, Type rhsType);
+	Type validateAndGetTypeByName(string name);
+	void checkByteSize(int value, string valueInStringForm);
+	void createAndPushSymbol(string name, Type type, int size);
+	void createAndPushSymbolFunc(string name, Type retType);
 	void start_Scope();
 	void end_Scope();
 
 	void isBoolean(Type t);
 	void isIntOrByte(Type t);
-	void validateArraySize(int numValue, std::string name);
+	void validateArraySize(int numValue, string name);
 	
 	
 	Type getTypeBinop(Type t1, Type t2);
-	T_Symbol getSymbol(std::string name);
+	T_Symbol getSymbol(string name);
 %}
 
 %token VOID INT BYTE RETURN B SC COMMA ID STRING TRUE FALSE
@@ -78,7 +81,7 @@ Program		:	Funcs;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($2.name);createAndPushSymbolFunc($2.name,$1.type);}	LBRACE ScopeStart Statements ScopeEnd	RBRACE {/*checkThatStatementsElementsWereDefinedAsFunctionParametersOrAlreadyDefinedInPrevScope*/} 
+FuncDecl	:	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($2.name);	createAndPushSymbolFunc($2.name,$1.type);}	LBRACE ScopeStart Statements ScopeEnd	RBRACE
 			;
 
 RetType		:	Type {$$.type=$1.type;}
@@ -162,7 +165,7 @@ ScopeEnd	:	{end_Scope();}
 
 %%
 
-void validateArraySize(int numValue, std::string name)
+void validateArraySize(int numValue, string name)
 {
 	if (numValue <= 0 || numValue >= 256)
 	{
@@ -170,13 +173,13 @@ void validateArraySize(int numValue, std::string name)
 	}
 }
 
-Type validateAndGetTypeByName(std::string name)
+Type validateAndGetTypeByName(string name)
 {
-	for (std::list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
+	for (list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
 	{
 		SymbolTable& currentTable = *it_st;
 		if (currentTable.lstSymbols.size() > 0) {
-			for (std::list<T_Symbol>::iterator it=currentTable.lstSymbols.begin(); it!=currentTable.lstSymbols.end(); ++it)
+			for (list<T_Symbol>::iterator it=currentTable.lstSymbols.begin(); it!=currentTable.lstSymbols.end(); ++it)
 			{
 				T_Symbol curr = *it;
 				if(name == curr.name)
@@ -224,7 +227,7 @@ void isIntOrByte(Type t)
 	}
 }
 
-void validateAssignmentDynamic(std::string lhsName, std::string rhsName, Type rhsType)
+void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType)
 {
 	T_Symbol lhsSymbol=getSymbol(lhsName);
 	if(lhsSymbol.type == __Type_INVALID)
@@ -290,7 +293,7 @@ void end_Scope()
 	if (top.lstSymbols.size() > 0) {
 
 		endScope();
-		for (std::list<T_Symbol>::iterator it=top.lstSymbols.begin(); it!=top.lstSymbols.end(); ++it) {
+		for (list<T_Symbol>::iterator it=top.lstSymbols.begin(); it!=top.lstSymbols.end(); ++it) {
 			T_Symbol curr = *it;
 			printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
 			m_iCurrentOffset--;
@@ -301,7 +304,7 @@ void end_Scope()
 
 
 
-void validateNotAlreadyDefined(std::string name)
+void validateNotAlreadyDefined(string name)
 {
 	
 	T_Symbol result=getSymbol(name);
@@ -317,7 +320,7 @@ void validateNotAlreadyDefined(std::string name)
 
 
 //will return error if its not defined. 
-void validateDefined(std::string name, bool isVariable) 
+void validateDefined(string name, bool isVariable) 
 {
 	T_Symbol result=getSymbol(name);
 	if(result.type==__Type_INVALID)
@@ -336,7 +339,7 @@ void validateDefined(std::string name, bool isVariable)
 
 }
 
-void createAndPushSymbol(std::string name, Type type, int size)
+void createAndPushSymbol(string name, Type type, int size)
 {
 	T_Symbol symbol;
 	symbol.name = name;
@@ -354,8 +357,10 @@ void createAndPushSymbol(std::string name, Type type, int size)
 	m_stScopeStack.front().addSymbol(symbol);
 }
 
- void createAndPushSymbolFunc(std::string name, Type retType)
+ void createAndPushSymbolFunc(string name, Type retType)
  {
+	 
+ }
 	//TODO: make it work. implementation is probably wrong.
 	//because its hard to link the symbols that are created as the paremeters, with the function that they are associated with.
 
@@ -387,17 +392,17 @@ void createAndPushSymbol(std::string name, Type type, int size)
 // 	funcArgsNAMES.erase(funcArgsNAMES.begin(),funcArgsNAMES.end());//erasing the whole buffer, so its ready to hold the next function's parameters
 // 	m_iCurrentFuncOffset=-1; //reset the offset counter
 
- }
+ 
 
 
-//if the element doesnt exist, returns a symbol with __Type_INVALID type
-T_Symbol getSymbol(std::string name)
+T_Symbol getSymbol(string name)
 {
-	for (std::list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
+//if the element doesnt exist, returns a symbol with __Type_INVALID type
+	for (list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
 	{
 		SymbolTable& currentTable = *it_st;
 		if (currentTable.lstSymbols.size() > 0) {
-			for (std::list<T_Symbol>::iterator it=currentTable.lstSymbols.begin(); it!=currentTable.lstSymbols.end(); ++it)
+			for (list<T_Symbol>::iterator it=currentTable.lstSymbols.begin(); it!=currentTable.lstSymbols.end(); ++it)
 			{
 				T_Symbol curr = *it;
 				if(name == curr.name)
@@ -417,7 +422,7 @@ T_Symbol getSymbol(std::string name)
 }
 
 
-void checkByteSize(int value, std::string valueInStringForm)
+void checkByteSize(int value, string valueInStringForm)
 {
 	if(value>255) 
 	{

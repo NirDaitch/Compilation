@@ -60,6 +60,22 @@ class T_Symbol {
 	~T_Symbol(){};
 };
 
+class Function 
+{
+	public:
+	std::string name;
+	std::list<T_Symbol> lstArgs;
+	Type returnType;
+	
+	Function (const Function& f)
+	{
+		this->name = f.name;
+		this->returnType = f.returnType;
+		this->lstArgs = f.lstArgs;
+	};
+	
+	~Function(){};
+};
 
 class SymbolTable {
 	public:
@@ -84,7 +100,7 @@ class SymbolTable {
 
 
 typedef std::list<SymbolTable> ScopeStack;
-
+//typedef map< std::string, Function > FunctionTable;
 
 
 #endif
