@@ -374,9 +374,10 @@ void end_Scope()
 		for (list<T_Symbol>::iterator it=top.lstSymbols.begin(); it!=top.lstSymbols.end(); ++it) {
 			T_Symbol curr = *it;
 			printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
-			m_iCurrentOffset--;
+			//m_iCurrentOffset--;
 		}
 	}
+	m_iCurrentOffset = 0;
 	m_stScopeStack.pop_front();
 }
 
