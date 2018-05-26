@@ -538,7 +538,7 @@ int main()
 
 int yyerror(const char * message)
 {
-	errorLex(yylineno);
+	errorSyn(yylineno);
 	///maybe pop stack here
 	exit(0);
 }

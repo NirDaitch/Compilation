@@ -72,5 +72,6 @@ break 									{								return BREAK;};
 %%
 
 void showError() {
-	printf("Error %s\n", yytext);
+	errorLex(yylineno);
+	//printf("Error %s\n", yytext);
 }
