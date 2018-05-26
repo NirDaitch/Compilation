@@ -24,6 +24,8 @@
 	////////////////CURRENT FUCNTION DATA///////////////
 	int m_iFUNCTION_CurrentOffset = 0;
 	list<T_Symbol> funcArgs;
+	
+	vector<Type> funcCallTypes;
 
 
 	///////// OUR FUNCTIONS DEFINITIONS//////////
@@ -38,6 +40,8 @@
 	T_Symbol createFunctionSymbol(string name, Type type, int size);
 	void createFunctionObj(string name, Type type);
 	void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args);
+	
+	void validateCallFunction(string funcName, vector<Type> callArgs);
 	
 	vector<string> generateStringTypes(list<T_Symbol> lstArgs);
 	
@@ -112,8 +116,8 @@ FormalDecl	:	Type	ID {funcArgs.push_back(createFunctionSymbol($2.name, $1.type, 
 			|	Type	ID	LBRACK	NUM		B	RBRACK {validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
 			;
 				
-Statements	:	Statement
-			|	Statements	Statement
+Statements	:	InitFunctionCall Statement
+			|	Statements	InitFunctionCall Statement
 
 Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
@@ -122,7 +126,7 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,Type_BYTE,$4.num_value); }
 			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type);}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment($1.type, $6.type);}
-			|	Call SC {}
+			|	Call SC
 			|	RETURN  SC
 			|	RETURN  Exp SC
 			| 	IF LPAREN Exp_boolean RPAREN ScopeStart Statement ScopeEnd
@@ -136,14 +140,14 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 startWhile	: {m_iWhileCounter++;};
 endWhile	: {m_iWhileCounter--;};
 
-
+InitFunctionCall: {funcCallTypes.clear();};
 
 				
-Call 		:	ID LPAREN ExpList RPAREN {/* TODO check function exists*/}
-			|  ID LPAREN RPAREN { /*TODO check function exists*/};
+Call 		:	ID LPAREN ExpList RPAREN {$$.type = validateAndGetTypeByName($1.name); validateCallFunction($1.name, funcCallTypes);}
+			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name); validateCallFunction($1.name, funcCallTypes);};
 				
-ExpList 	:	Exp
-			|	Exp COMMA ExpList;
+ExpList 	:	Exp {funcCallTypes.push_back($1.type);}
+			|	Exp COMMA ExpList {funcCallTypes.push_back($1.type);};
 			
 Type		:	INT		{ $$.type = Type_INT;}
 			|	BYTE	{ $$.type = Type_BYTE;}
@@ -185,6 +189,37 @@ ProgramScopeEnd	:	{end_Scope();}
 			;
 
 %%
+
+void validateCallFunction(string funcName, vector<Type> callArgs)
+{
+	T_Symbol symbFunc=getSymbol(funcName);
+	if(symbFunc.type == __Type_INVALID || !symbFunc.isFunction)
+	{
+		errorUndefFunc(yylineno, funcName);
+		exit(0);
+	}
+	if (symbFunc.lstArgs.size() != callArgs.size())
+	{
+		vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+		errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+		exit(0);
+	}
+	int i = 0;
+	for (list<T_Symbol>::iterator it=symbFunc.lstArgs.begin(); it!=symbFunc.lstArgs.end(); ++it)
+	{
+		T_Symbol currSymbol = *it;
+		//cout << "currSymbol name: " << currSymbol.name << ", type is: " << currSymbol.type << endl;
+		//cout << "args[i] is: " << callArgs[i] << endl;
+		if (currSymbol.type != callArgs[i])
+		{
+			vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+			errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+			exit(0);
+		}
+		i++;
+	}
+	
+}
 
 void checkHasMain()
 {
