@@ -51,6 +51,7 @@
 	void isIntOrByte(Type t);
 	void validateArraySize(int numValue, string name);
 	
+	void checkHasMain();
 	
 	Type getTypeBinop(Type t1, Type t2);
 	T_Symbol getSymbol(string name);
@@ -86,7 +87,7 @@
 
 %%
 
-Program		:	ProgramScopeStart Funcs ProgramScopeEnd;
+Program		:	ProgramScopeStart Funcs ProgramScopeEnd {checkHasMain();};
 
 Funcs		:	FuncDecl	Funcs
 			|	;
@@ -184,6 +185,23 @@ ProgramScopeEnd	:	{end_Scope();}
 			;
 
 %%
+
+void checkHasMain()
+{
+	T_Symbol mainFunc=getSymbol("main");
+	if(mainFunc.type != __Type_INVALID)
+	{
+		if(mainFunc.isFunction && mainFunc.type == Type_VOID)
+		{
+			if (mainFunc.lstArgs.empty())
+			{
+				return;
+			}
+		}
+	}
+	errorMainMissing();	
+	exit(0);
+}
 
 void program_scope_start()
 {
