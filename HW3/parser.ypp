@@ -313,11 +313,8 @@ void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType)
 		exit(0);
 	}
 
-	validateAssignment(lhsSymbol.type, rhsType);
-
-
 	T_Symbol rhsSymbol=getSymbol(rhsName);
-
+	
 	if (lhsSymbol.Type_ARRAY_SIZE != -1)
 	{
 		/// lhs is an array
@@ -335,9 +332,26 @@ void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType)
 			errorMismatch(yylineno);
 			exit(0);
 		}
-		///both are arrays from same types (validated earlier) and same size, all good!
+		///both are arrays from same size!
+		
+		if (rhsSymbol.type != lhsSymbol.type)
+		{
+			errorMismatch(yylineno);
+			exit(0);
+		}
+		
+		///both are arrays from same size and type! SUCCESS
 	}
-	//// both are non-array and match
+	else /// lhs is not an array
+	{
+		if(rhsSymbol.type != __Type_INVALID && rhsSymbol.Type_ARRAY_SIZE != -1) 
+		{
+			errorMismatch(yylineno);
+			exit(0);
+			return;
+		}
+		validateAssignment(lhsSymbol.type, rhsType);
+	}
 }
 
 void validateAssignment(Type lhs, Type rhs)
