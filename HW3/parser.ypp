@@ -124,8 +124,8 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Call SC {}
 			|	RETURN  SC
 			|	RETURN  Exp SC
-			| 	IF LPAREN Exp_boolean RPAREN Statement
-			|   IF LPAREN Exp_boolean RPAREN Statement ELSE Statement
+			| 	IF LPAREN Exp_boolean RPAREN ScopeStart Statement ScopeEnd
+			|   IF LPAREN Exp_boolean RPAREN ScopeStart Statement ScopeEnd ELSE ScopeStart Statement ScopeEnd
 			|	WHILE startWhile LPAREN Exp_boolean RPAREN Statement endWhile
 			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}}
 			;
@@ -451,7 +451,7 @@ void validateDefined(string name, bool isVariable)
 
 T_Symbol createFunctionSymbol(string name, Type type, int size)
 {
-	cout << "createFunctionSymbol called with name: " << name << endl;
+	//cout << "createFunctionSymbol called with name: " << name << endl;
 	T_Symbol symbol;
 	symbol.name = name;
 	symbol.type = type;
