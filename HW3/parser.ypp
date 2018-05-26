@@ -159,7 +159,7 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
 			|	Call
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value;}
-			| 	STRING			{ $$.type = Type_BOOL;}
+			| 	STRING			{ $$.type = Type_STRING;}
 			|	TRUE			{ $$.type = Type_BOOL;}
 			|	FALSE			{ $$.type = Type_BOOL;}
 			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
