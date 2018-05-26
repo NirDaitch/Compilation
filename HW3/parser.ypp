@@ -224,6 +224,7 @@ void validateArraySize(int numValue, string name)
 	if (numValue <= 0 || numValue >= 256)
 	{
 		errorInvalidArraySize(yylineno, name);
+		exit(0);
 	}
 }
 
