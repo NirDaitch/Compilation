@@ -36,7 +36,8 @@
 	void checkByteSize(int value, string valueInStringForm);
 	void createAndPushSymbol(string name, Type type, int size);
 	
-	void createAndPushFunctionSymbol(string name, Type type, int size);
+	T_Symbol createFunctionSymbol(string name, Type type, int size);
+	void createFunctionObj(string name, Type type);
 	
 	void start_Scope();
 	void start_scope_function();
@@ -85,7 +86,7 @@ Program		:	Funcs;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	{m_iFUNCTION_CurrentOffset = 0; funcArgs.clear();} RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($2.name);	createAndPushSymbolFunc($2.name,$1.type);}	LBRACE ScopeStartFunction Statements ScopeEnd	RBRACE
+FuncDecl	:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();} RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($2.name);	createFunctionObj($2.name,$1.type);}	LBRACE ScopeStartFunction Statements ScopeEnd	RBRACE
 			;
 
 RetType		:	Type {$$.type=$1.type;}
@@ -98,9 +99,9 @@ Formals		:	FormalsList
 FormalsList	:	FormalDecl
 			|	FormalDecl	COMMA	FormalsList;
 				
-FormalDecl	:	Type	ID {funcArgs.add(createFunctionSymbol($2.name, $1.type, -1));}
-			|	Type	ID	LBRACK	NUM	RBRACK {funcArgs.add(createFunctionSymbol($2.name, $1.type, $4));}
-			|	Type	ID	LBRACK	NUM		B	RBRACK {funcArgs.add(createFunctionSymbol($2.name, $1.type, $4));}
+FormalDecl	:	Type	ID {funcArgs.push_back(createFunctionSymbol($2.name, $1.type, -1));}
+			|	Type	ID	LBRACK	NUM	RBRACK {validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
+			|	Type	ID	LBRACK	NUM		B	RBRACK {validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
 			;
 				
 Statements	:	Statement
@@ -294,11 +295,18 @@ void start_Scope()
 	m_stScopeStack.push_front(newTable);
 }
 
+void createFunctionObj(string name, Type type)
+{
+	
+}
+
 void start_scope_function()
 {
 	SymbolTable newTable;
 	for (list<T_Symbol>::iterator it=funcArgs.begin(); it!=funcArgs.end(); ++it) 
 	{
+		T_Symbol symbol = *it;
+		cout << "adding symbol: " << symbol.name << endl;
 		newTable.addSymbol(symbol);
 	}
 	m_stScopeStack.push_front(newTable);
@@ -356,7 +364,7 @@ void validateDefined(string name, bool isVariable)
 
 }
 
-void createAndPushFunctionSymbol(string name, Type type, int size)
+T_Symbol createFunctionSymbol(string name, Type type, int size)
 {
 	T_Symbol symbol;
 	symbol.name = name;
@@ -371,7 +379,7 @@ void createAndPushFunctionSymbol(string name, Type type, int size)
 		m_iFUNCTION_CurrentOffset+=-(size-1);
 	}
 
-	funcArgs.push_back(symbol);
+	return symbol;
 }
 
 void createAndPushSymbol(string name, Type type, int size)
