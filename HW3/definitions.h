@@ -94,8 +94,9 @@ class SymbolTable {
 
 	void addSymbol(const T_Symbol& symbol)
 	{
-		cout << "name: " << symbol.name << endl;
-		cout << "type: " << symbol.type << endl;
+		//cout << "name: " << symbol.name << endl;
+		//cout << "type: " << symbol.type << endl;
+		
 		
 		lstSymbols.push_back(symbol);
 	}

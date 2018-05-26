@@ -89,8 +89,10 @@ Program		:	ProgramScopeStart Funcs ProgramScopeEnd;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();} RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($2.name);	createFunctionObj($2.name,$1.type);}	LBRACE ScopeStartFunction Statements ScopeEnd	RBRACE
+FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements ScopeEnd	RBRACE
 			;
+
+FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();};	
 
 RetType		:	Type {$$.type=$1.type;}
 			| 	VOID {$$.type=Type_VOID;}
@@ -111,12 +113,12 @@ Statements	:	Statement
 			|	Statements	Statement
 
 Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
-			|	Type	ID	SC 	{ validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
+			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
-			|	Type	ID	LBRACK	NUM	RBRACK	SC { validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
+			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,Type_BYTE,$4.num_value); }
-			|	ID	ASSIGN	Exp	SC { validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type);}
-			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment($1.type, $6.type);}
+			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment($1.type, $6.type);}
 			|	Call SC {}
 			|	RETURN  SC
 			|	RETURN  Exp SC
@@ -134,8 +136,8 @@ endWhile	: {m_iWhileCounter--;};
 
 
 				
-Call 		:	ID LPAREN ExpList RPAREN { /*check function exists*/}
-			|  ID LPAREN RPAREN { /*check function exists*/};
+Call 		:	ID LPAREN ExpList RPAREN {/* TODO check function exists*/}
+			|  ID LPAREN RPAREN { /*TODO check function exists*/};
 				
 ExpList 	:	Exp
 			|	Exp COMMA ExpList;
@@ -340,7 +342,7 @@ void start_Scope()
 void createFunctionObj(string name, Type type)
 {
 	
-	cout <<"func type is " << type << endl;
+	//cout <<"func type is " << type << endl;
 	list<T_Symbol> lstArgsTmp;
 
 	for (list<T_Symbol>::iterator it=funcArgs.begin(); it!=funcArgs.end(); ++it) 
@@ -417,6 +419,7 @@ void validateDefined(string name, bool isVariable)
 
 T_Symbol createFunctionSymbol(string name, Type type, int size)
 {
+	cout << "createFunctionSymbol called with name: " << name << endl;
 	T_Symbol symbol;
 	symbol.name = name;
 	symbol.type = type;
@@ -435,6 +438,8 @@ T_Symbol createFunctionSymbol(string name, Type type, int size)
 
 void createAndPushSymbol(string name, Type type, int size)
 {
+	//cout << "creating symbol with name: " << name << " in line: " << yylineno << endl;
+	
 	T_Symbol symbol;
 	symbol.name = name;
 	symbol.type = type;
