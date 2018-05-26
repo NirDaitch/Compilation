@@ -17,7 +17,6 @@ typedef enum {
     Type_STRING,
     Type_VOID,
     Type_BOOL,
-    Type_FUNCTION,
 	__Type_INVALID
 } Type;
 

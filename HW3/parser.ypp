@@ -39,6 +39,8 @@
 	void createFunctionObj(string name, Type type);
 	void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args);
 	
+	vector<string> generateStringTypes(list<T_Symbol> lstArgs);
+	
 	void start_Scope();
 	void start_scope_function();
 	void program_scope_start();
@@ -186,12 +188,6 @@ ProgramScopeEnd	:	{end_Scope();}
 void program_scope_start()
 {
 	start_Scope();
-
-	T_Symbol integerSymbol;
-	integerSymbol.type = Type_INT;
-	list<T_Symbol> lstArgs1;
-	lstArgs1.push_back(integerSymbol);
-	addFunctionToSymbolTable("printi", Type_VOID, lstArgs1);
 	
 	T_Symbol stringSymbol;
 	stringSymbol.type = Type_STRING;
@@ -199,6 +195,11 @@ void program_scope_start()
 	lstArgs2.push_back(stringSymbol);
 	addFunctionToSymbolTable("print", Type_VOID, lstArgs2);
 	
+	T_Symbol integerSymbol;
+	integerSymbol.type = Type_INT;
+	list<T_Symbol> lstArgs1;
+	lstArgs1.push_back(integerSymbol);
+	addFunctionToSymbolTable("printi", Type_VOID, lstArgs1);
 
 }
 
@@ -207,6 +208,7 @@ void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args)
 	T_Symbol funcSymbol;
 	funcSymbol.isFunction = true;
 	funcSymbol.name = name;
+	funcSymbol.type = returnType;
 
 	for (list<T_Symbol>::iterator it=args.begin(); it!=args.end(); ++it) 
 	{
@@ -337,6 +339,7 @@ void start_Scope()
 {
 	SymbolTable newTable;
 	m_stScopeStack.push_front(newTable);
+	
 }
 
 void createFunctionObj(string name, Type type)
@@ -373,15 +376,43 @@ void end_Scope()
 	if (top.lstSymbols.size() > 0) {
 		for (list<T_Symbol>::iterator it=top.lstSymbols.begin(); it!=top.lstSymbols.end(); ++it) {
 			T_Symbol curr = *it;
-			printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
-			//m_iCurrentOffset--;
+			
+			if (curr.isFunction)
+			{
+				vector<string> lstArgsAsStrings = generateStringTypes(curr.lstArgs);
+				//cout << "function type is: " << TYPES_TO_STRING[curr.type] << endl;
+				string sFunctionType = makeFunctionType(TYPES_TO_STRING[curr.type], lstArgsAsStrings);
+				printID(curr.name, 0, sFunctionType);
+			}
+			else
+			{
+				if (curr.Type_ARRAY_SIZE != -1)
+				{
+					string sArrayType = makeArrayType(TYPES_TO_STRING[curr.type], curr.Type_ARRAY_SIZE);
+					printID(curr.name, curr.offset, sArrayType);
+				}
+				else
+				{
+					printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
+				}
+			}
 		}
 	}
 	m_iCurrentOffset = 0;
 	m_stScopeStack.pop_front();
 }
 
-
+vector<string> generateStringTypes(list<T_Symbol> lstArgs)
+{
+	vector<string> lstArgsAsStrings;
+	for (list<T_Symbol>::iterator it=lstArgs.begin(); it!=lstArgs.end(); ++it) 
+	{
+		T_Symbol symbol = *it;
+		//cout << "symbol type is" << symbol.type << endl;
+		lstArgsAsStrings.push_back(TYPES_TO_STRING[symbol.type]);
+	}
+	return lstArgsAsStrings;
+}
 
 void validateNotAlreadyDefined(string name)
 {
