@@ -36,6 +36,7 @@ class EXP_ATTRIBUTE {
 	~EXP_ATTRIBUTE(){};
 };
 
+
 class T_Symbol {
 	public:
 	std::string name;
@@ -43,10 +44,18 @@ class T_Symbol {
 	int offset;
 	int Type_ARRAY_SIZE;
 	
+	//// THIS LANGUAGE SUCKS!! ////
+	//// you can't use dynamic casting if it's not a pointer,////
+	//// and i really don't feal like changing the whole program ////
+	bool isFunction;
+	std::list<T_Symbol> lstArgs;
+	
 	T_Symbol() 
 	{
 		this->name = "";
 		this->Type_ARRAY_SIZE = -1;
+		this->isFunction = false;
+		this->type = (Type) -1;
 	};
 	
 	T_Symbol (const T_Symbol& s)
@@ -55,27 +64,29 @@ class T_Symbol {
 		this->type = s.type;
 		this->offset = s.offset;
 		this->Type_ARRAY_SIZE = s.Type_ARRAY_SIZE;
+		this->isFunction = s.isFunction;
+		this->lstArgs = s.lstArgs;
 	};
 	
 	~T_Symbol(){};
 };
 
-class Function 
-{
-	public:
-	std::string name;
-	std::list<T_Symbol> lstArgs;
-	Type returnType;
-	
-	Function (const Function& f)
-	{
-		this->name = f.name;
-		this->returnType = f.returnType;
-		this->lstArgs = f.lstArgs;
-	};
-	
-	~Function(){};
-};
+//class Function
+//{
+//	public:
+//	std::string name;
+//	std::list<T_Symbol> lstArgs;
+//	Type returnType;
+//	
+//	Function (const Function& f)
+//	{
+//		this->name = f.name;
+//		this->returnType = f.returnType;
+//		this->lstArgs = f.lstArgs;
+//	};
+//	
+//	~Function(){};
+//};
 
 class SymbolTable {
 	public:
@@ -83,8 +94,8 @@ class SymbolTable {
 
 	void addSymbol(const T_Symbol& symbol)
 	{
-		//cout << "name: " << symbol.name << endl;
-		//cout << "type: " << symbol.type << endl;
+		cout << "name: " << symbol.name << endl;
+		cout << "type: " << symbol.type << endl;
 		
 		lstSymbols.push_back(symbol);
 	}

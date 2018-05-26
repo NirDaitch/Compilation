@@ -17,7 +17,6 @@
 	///////// OUR GLOBAL VARS DEFINITIONS//////////
 	int m_iWhileCounter = 0;
 	ScopeStack m_stScopeStack;
-	map< string, Function > m_mpFunctionTable;
 	int m_iCurrentOffset = 0;
 	vector<string>  TYPES_TO_STRING;
 	
@@ -38,9 +37,12 @@
 	
 	T_Symbol createFunctionSymbol(string name, Type type, int size);
 	void createFunctionObj(string name, Type type);
+	void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args);
 	
 	void start_Scope();
 	void start_scope_function();
+	void program_scope_start();
+	
 	void end_Scope();
 
 	void isBoolean(Type t);
@@ -82,7 +84,8 @@
 
 %%
 
-Program		:	Funcs;
+Program		:	ProgramScopeStart Funcs ProgramScopeEnd;
+
 Funcs		:	FuncDecl	Funcs
 			|	;
 
@@ -114,7 +117,7 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,Type_BYTE,$4.num_value); }
 			|	ID	ASSIGN	Exp	SC { validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type);}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  { validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment($1.type, $6.type);}
-			|	Call SC
+			|	Call SC {}
 			|	RETURN  SC
 			|	RETURN  Exp SC
 			| 	IF LPAREN Exp_boolean RPAREN Statement
@@ -131,8 +134,8 @@ endWhile	: {m_iWhileCounter--;};
 
 
 				
-Call 		:	ID LPAREN ExpList RPAREN
-			|  ID LPAREN RPAREN;
+Call 		:	ID LPAREN ExpList RPAREN { /*check function exists*/}
+			|  ID LPAREN RPAREN { /*check function exists*/};
 				
 ExpList 	:	Exp
 			|	Exp COMMA ExpList;
@@ -165,13 +168,52 @@ Exp_boolean	:   Exp {isBoolean($1.type);}
 ScopeStart	:	{start_Scope();}
 			;
 			
+ProgramScopeStart	:	{ program_scope_start();}
+			;
+			
 ScopeStartFunction	:	{start_scope_function();}
 			;
 		
 ScopeEnd	:	{end_Scope();}
 			;
+ProgramScopeEnd	:	{end_Scope();}
+			;
 
 %%
+
+void program_scope_start()
+{
+	start_Scope();
+
+	T_Symbol integerSymbol;
+	integerSymbol.type = Type_INT;
+	list<T_Symbol> lstArgs1;
+	lstArgs1.push_back(integerSymbol);
+	addFunctionToSymbolTable("printi", Type_VOID, lstArgs1);
+	
+	T_Symbol stringSymbol;
+	stringSymbol.type = Type_STRING;
+	list<T_Symbol> lstArgs2;
+	lstArgs2.push_back(stringSymbol);
+	addFunctionToSymbolTable("print", Type_VOID, lstArgs2);
+	
+
+}
+
+void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args)
+{
+	T_Symbol funcSymbol;
+	funcSymbol.isFunction = true;
+	funcSymbol.name = name;
+
+	for (list<T_Symbol>::iterator it=args.begin(); it!=args.end(); ++it) 
+	{
+		T_Symbol symbol = *it;
+		funcSymbol.lstArgs.push_back(symbol);
+	}
+
+	m_stScopeStack.front().addSymbol(funcSymbol);
+}
 
 void validateArraySize(int numValue, string name)
 {
@@ -298,6 +340,16 @@ void start_Scope()
 void createFunctionObj(string name, Type type)
 {
 	
+	cout <<"func type is " << type << endl;
+	list<T_Symbol> lstArgsTmp;
+
+	for (list<T_Symbol>::iterator it=funcArgs.begin(); it!=funcArgs.end(); ++it) 
+	{
+		T_Symbol symbol = *it;
+		//cout << "adding symbol: " << symbol.name << endl;
+		lstArgsTmp.push_back(symbol);
+	}
+	addFunctionToSymbolTable(name, type, lstArgsTmp);
 }
 
 void start_scope_function()
@@ -306,7 +358,7 @@ void start_scope_function()
 	for (list<T_Symbol>::iterator it=funcArgs.begin(); it!=funcArgs.end(); ++it) 
 	{
 		T_Symbol symbol = *it;
-		cout << "adding symbol: " << symbol.name << endl;
+		//cout << "adding symbol: " << symbol.name << endl;
 		newTable.addSymbol(symbol);
 	}
 	m_stScopeStack.push_front(newTable);
@@ -315,9 +367,8 @@ void start_scope_function()
 void end_Scope()
 {
 	SymbolTable& top = m_stScopeStack.front();
+	endScope();
 	if (top.lstSymbols.size() > 0) {
-
-		endScope();
 		for (list<T_Symbol>::iterator it=top.lstSymbols.begin(); it!=top.lstSymbols.end(); ++it) {
 			T_Symbol curr = *it;
 			printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
@@ -331,7 +382,7 @@ void end_Scope()
 
 void validateNotAlreadyDefined(string name)
 {
-	
+	//cout << " name is: " << name << endl;
 	T_Symbol result=getSymbol(name);
 	if(result.type!=__Type_INVALID)
 	{
