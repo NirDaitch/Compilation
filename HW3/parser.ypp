@@ -113,7 +113,7 @@ FormalsList	:	FormalDecl
 				
 FormalDecl	:	Type	ID {funcArgs.push_back(createFunctionSymbol($2.name, $1.type, -1));}
 			|	Type	ID	LBRACK	NUM	RBRACK {validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
-			|	Type	ID	LBRACK	NUM		B	RBRACK {validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
+			|	Type	ID	LBRACK	NUM		B	RBRACK {checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name);  funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
 			;
 				
 Statements	:	InitFunctionCall Statement
