@@ -22,7 +22,7 @@
 	
 	
 	////////////////CURRENT FUCNTION DATA///////////////
-	int m_iFUNCTION_CurrentOffset = 0;
+	int m_iFUNCTION_CurrentOffset = -1;
 	list<T_Symbol> funcArgs;
 	
 	vector<Type> funcCallTypes;
@@ -531,14 +531,14 @@ T_Symbol createFunctionSymbol(string name, Type type, int size)
 	T_Symbol symbol;
 	symbol.name = name;
 	symbol.type = type;
-	symbol.offset = m_iFUNCTION_CurrentOffset++;
+	symbol.offset = m_iFUNCTION_CurrentOffset--;
 	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
 
 
 	if(size>-1)//its an array!
 	{
 		symbol.Type_ARRAY_SIZE=size;		
-		m_iFUNCTION_CurrentOffset+=-(size-1);
+		m_iFUNCTION_CurrentOffset-=(size-1);
 	}
 
 	return symbol;
