@@ -118,6 +118,7 @@ FormalDecl	:	Type	ID {funcArgs.push_back(createFunctionSymbol($2.name, $1.type, 
 				
 Statements	:	InitFunctionCall Statement
 			|	Statements	InitFunctionCall Statement
+			;
 
 Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
@@ -531,16 +532,15 @@ T_Symbol createFunctionSymbol(string name, Type type, int size)
 	T_Symbol symbol;
 	symbol.name = name;
 	symbol.type = type;
-	symbol.offset = m_iFUNCTION_CurrentOffset--;
-	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
-
-
+	
 	if(size>-1)//its an array!
 	{
 		symbol.Type_ARRAY_SIZE=size;		
 		m_iFUNCTION_CurrentOffset-=(size-1);
 	}
 
+	symbol.offset = m_iFUNCTION_CurrentOffset--;
+	
 	return symbol;
 }
 
