@@ -63,7 +63,7 @@
 
 %token VOID INT BYTE RETURN B SC COMMA ID STRING TRUE FALSE
 
-%nonassoc RPAREN LBRACE RBRACE LBRACK RBRACK LPAREN
+%nonassoc RPAREN LPAREN LBRACE RBRACE LBRACK RBRACK
 
 %nonassoc IF
 %nonassoc ELSE
@@ -123,7 +123,7 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
-			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,Type_BYTE,$4.num_value); }
+			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,$1.type,$4.num_value); /*we take: A[5 b] same as: A[5]*/ }
 			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type);}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type);}
 			|	Call SC
