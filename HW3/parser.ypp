@@ -33,7 +33,7 @@
 	void validateDefined(string name, bool isVariable);
 	void validateAssignment(Type lhs, Type rhs);
 	void validateAssignmentDynamic(string nameLHS, string rhsName, Type rhsType);
-	Type validateAndGetTypeByName(string name);
+	Type validateAndGetTypeByName(string name, bool isVariable);
 	void checkByteSize(int value, string valueInStringForm);
 	void createAndPushSymbol(string name, Type type, int size);
 	
@@ -125,7 +125,7 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,Type_BYTE,$4.num_value); }
 			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type);}
-			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name), $6.type);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type);}
 			|	Call SC
 			|	RETURN  SC
 			|	RETURN  Exp SC
@@ -143,8 +143,8 @@ endWhile	: {m_iWhileCounter--;};
 InitFunctionCall: {funcCallTypes.clear();};
 
 				
-Call 		:	ID LPAREN ExpList RPAREN {$$.type = validateAndGetTypeByName($1.name); validateCallFunction($1.name, funcCallTypes);}
-			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name); validateCallFunction($1.name, funcCallTypes);};
+Call 		:	ID LPAREN ExpList RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes);}
+			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes);};
 				
 ExpList 	:	Exp {funcCallTypes.push_back($1.type);}
 			|	Exp COMMA ExpList {funcCallTypes.push_back($1.type);};
@@ -154,8 +154,8 @@ Type		:	INT		{ $$.type = Type_INT;}
 			|	BOOL	{ $$.type = Type_BOOL;};
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
-			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name); isIntOrByte($3.type);}
-			|	ID				{$$.type = validateAndGetTypeByName($1.name);}
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); isIntOrByte($3.type);}
+			|	ID				{$$.type = validateAndGetTypeByName($1.name, true);}
 			|	Call
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value;}
@@ -282,7 +282,7 @@ void validateArraySize(int numValue, string name)
 	}
 }
 
-Type validateAndGetTypeByName(string name)
+Type validateAndGetTypeByName(string name, bool isVariable)
 {
 	for (list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
 	{
@@ -300,7 +300,14 @@ Type validateAndGetTypeByName(string name)
 		}
 	}
 	
-	errorUndef(yylineno, name);
+	if(isVariable==true)
+	{
+		errorUndef(yylineno, name);	
+	}
+	else
+	{
+		errorUndefFunc(yylineno, name);
+	}	
 	exit(0);
 	return (Type) -1;
 }
