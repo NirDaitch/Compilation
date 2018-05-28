@@ -2,6 +2,7 @@
 %{
 	#include <iostream>
 	#include "definitions.h"
+	#include <algorithm>
 	#include "output.hpp"
 	#include <stdio.h>
 	#include <map>
@@ -43,7 +44,7 @@
 	
 	void validateCallFunction(string funcName, vector<EXP_ATTRIBUTE> callArgs);
 	void validateFunctionArg(string varName);
-	
+	bool contains(list<T_Symbol> lstStrings, string sym);
 	vector<string> generateStringTypes(list<T_Symbol> lstArgs);
 	
 	void start_Scope();
@@ -465,11 +466,21 @@ void start_Scope()
 	m_stScopeStack.push_front(newTable);
 	
 }
+bool contains(list<T_Symbol> lstStrings, string sym)
+{
+	vector<string> vec;
+	for (list<T_Symbol>::iterator it=lstStrings.begin(); it!=lstStrings.end(); ++it) 
+	{
+		T_Symbol currSym = *it;
+		vec.push_back(currSym.name);
+	}
+	return find(vec.begin(), vec.end(), sym) != vec.end();
+}
 
 void createFunctionObj(string name, Type type)
 {
 	list<T_Symbol> lstArgsTmp;
-
+	
 	for (list<T_Symbol>::iterator it=funcArgs.begin(); it!=funcArgs.end(); ++it) 
 	{
 		T_Symbol symbol = *it;
@@ -481,8 +492,15 @@ void createFunctionObj(string name, Type type)
 			errorDef(yylineno, symbol.name);	
 			exit(0);
 		}
+		if(contains(lstArgsTmp,symbol.name))
+		{
+			//2 function args with same name
+			errorDef(yylineno, symbol.name);	
+			exit(0);
+		}		
 		lstArgsTmp.push_back(symbol);
 	}
+	
 	addFunctionToSymbolTable(name, type, lstArgsTmp);
 }
 
