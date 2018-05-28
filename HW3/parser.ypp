@@ -42,6 +42,7 @@
 	void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args);
 	
 	void validateCallFunction(string funcName, vector<Type> callArgs);
+	void validateFunctionArg(string varName);
 	
 	vector<string> generateStringTypes(list<T_Symbol> lstArgs);
 	
@@ -111,9 +112,9 @@ Formals		:	FormalsList
 FormalsList	:	FormalDecl
 			|	FormalDecl	COMMA	FormalsList;
 				
-FormalDecl	:	Type	ID {funcArgs.push_back(createFunctionSymbol($2.name, $1.type, -1));}
-			|	Type	ID	LBRACK	NUM	RBRACK {validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
-			|	Type	ID	LBRACK	NUM		B	RBRACK {checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name);  funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
+FormalDecl	:	Type	ID { funcArgs.push_back(createFunctionSymbol($2.name, $1.type, -1));}
+			|	Type	ID	LBRACK	NUM	RBRACK { validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
+			|	Type	ID	LBRACK	NUM		B	RBRACK { checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name);  funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
 			;
 				
 Statements	:	InitFunctionCall Statement
@@ -190,6 +191,19 @@ ProgramScopeEnd	:	{end_Scope();}
 			;
 
 %%
+
+void validateFunctionArg(string varName)
+{
+	T_Symbol symbol=getSymbol(varName);
+	if(symbol.type != __Type_INVALID)
+	{
+		if(symbol.isFunction)
+		{
+			errorDef(yylineno, varName);
+			exit(0);
+		}
+	}
+}
 
 void validateCallFunction(string funcName, vector<Type> callArgs)
 {
@@ -421,14 +435,19 @@ void start_Scope()
 
 void createFunctionObj(string name, Type type)
 {
-	
-	//cout <<"func name is " << name << endl;
 	list<T_Symbol> lstArgsTmp;
 
 	for (list<T_Symbol>::iterator it=funcArgs.begin(); it!=funcArgs.end(); ++it) 
 	{
 		T_Symbol symbol = *it;
-		//cout << "adding symbol: " << symbol.name << endl;
+
+		validateFunctionArg(symbol.name);
+		if (symbol.name.compare(name) == 0)
+		{
+			///current function arg has same name as function
+			errorDef(yylineno, symbol.name);	
+			exit(0);
+		}
 		lstArgsTmp.push_back(symbol);
 	}
 	addFunctionToSymbolTable(name, type, lstArgsTmp);
