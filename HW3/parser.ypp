@@ -98,7 +98,7 @@ Program		:	ProgramScopeStart Funcs {checkHasMain();} ProgramScopeEnd ;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements ScopeEnd	RBRACE
+FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements RBRACE ScopeEnd
 			;
 
 FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();};	
@@ -122,7 +122,7 @@ Statements	:	Statement
 			|	Statements	 Statement
 			;
 
-Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
+Statement	:	LBRACE	ScopeStart	Statements 	RBRACE ScopeEnd
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
@@ -132,9 +132,9 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Call SC
 			|	RETURN  SC
 			|	RETURN  Exp SC
-			| 	IF LPAREN Exp_boolean RPAREN ScopeStart Statement ScopeEnd
-			|   IF LPAREN Exp_boolean RPAREN ScopeStart Statement ScopeEnd ELSE ScopeStart Statement ScopeEnd
-			|	WHILE startWhile LPAREN ScopeStart Exp  RPAREN {isBoolean($5.type);} ScopeEnd Statement endWhile
+			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd
+			|   IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd  ELSE ScopeStart Statement ScopeEnd
+			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);} ScopeStart Statement ScopeEnd endWhile
 			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}}
 			;
 			
@@ -524,6 +524,8 @@ void end_Scope()
 		for (list<T_Symbol>::iterator it=top.lstSymbols.begin(); it!=top.lstSymbols.end(); ++it) {
 			T_Symbol curr = *it;
 			
+
+			
 			if (curr.isFunction)
 			{
 				vector<string> lstArgsAsStrings = generateStringTypes(curr.lstArgs);
@@ -533,19 +535,25 @@ void end_Scope()
 			}
 			else
 			{
+				
+
 				if (curr.Type_ARRAY_SIZE != -1)
 				{
+
 					string sArrayType = makeArrayType(TYPES_TO_STRING[curr.type], curr.Type_ARRAY_SIZE);
 					printID(curr.name, curr.offset, sArrayType);
+					//m_iCurrentOffset-=(curr.Type_ARRAY_SIZE-1);
 				}
 				else
 				{
 					printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
 				}
+
+				//m_iCurrentOffset--;
 			}
 		}
 	}
-	m_iCurrentOffset = 0;
+	m_iCurrentOffset=0;
 	m_stScopeStack.pop_front();
 }
 
