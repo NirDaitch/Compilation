@@ -37,7 +37,7 @@
 	Type validateAndGetTypeByName(string name, bool isVariable);
 	void checkByteSize(int value, string valueInStringForm);
 	void createAndPushSymbol(string name, Type type, int size);
-	
+	void checkFuncValidReturn(Type type,int size,bool is_array_at_index);
 	T_Symbol createFunctionSymbol(string name, Type type, int size);
 	void createFunctionObj(string name, Type type);
 	void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args);
@@ -52,7 +52,7 @@
 	void program_scope_start();
 	
 	void end_Scope();
-
+	int getExpSizeFromTable(string name);
 	void isBoolean(Type t);
 	void isIntOrByte(Type t);
 	void validateArraySize(int numValue, string name);
@@ -130,8 +130,8 @@ Statement	:	LBRACE	ScopeStart	Statements 	RBRACE ScopeEnd
 			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type,$3.is_array_at_index);}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type);}
 			|	Call SC
-			|	RETURN  SC
-			|	RETURN  Exp SC
+			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, true);}
+			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array_at_index);}
 			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd  ELSE ScopeStart Statement ScopeEnd
 			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);} ScopeStart Statement ScopeEnd endWhile
@@ -504,6 +504,43 @@ void createFunctionObj(string name, Type type)
 	addFunctionToSymbolTable(name, type, lstArgsTmp);
 }
 
+
+void checkFuncValidReturn(Type type,int size, bool is_array_at_index)
+{
+	
+
+	for (list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
+	{
+		SymbolTable& currentTable = *it_st;
+		if (currentTable.lstSymbols.size() > 0)
+		 {
+			for (list<T_Symbol>::reverse_iterator it=currentTable.lstSymbols.rbegin(); it!=currentTable.lstSymbols.rend(); ++it)
+			{
+				T_Symbol curr = *it;
+				if(curr.isFunction)
+				{
+					if((curr.type!=type && !(type == Type_BYTE && curr.type == Type_INT))&& !is_array_at_index)
+					{
+						//cout<<"fun type: "<<curr.type << " type: "<< type;
+						errorMismatch(yylineno);
+						exit(0);
+					}
+					//its ok-finish
+					return;
+				}
+			}
+			
+		}
+	}
+
+
+	// errorMismatch(yylineno);
+	// exit(0);
+
+
+
+
+}
 void start_scope_function()
 {
 	SymbolTable newTable;
@@ -642,6 +679,14 @@ T_Symbol createFunctionSymbol(string name, Type type, int size)
 	return symbol;
 }
 
+int getExpSizeFromTable(string name)
+{
+	T_Symbol sym=getSymbol(name);
+	return sym.Type_ARRAY_SIZE;
+}
+
+
+
 void createAndPushSymbol(string name, Type type, int size)
 {
 	//cout << "creating symbol with name: " << name << " in line: " << yylineno << endl;
@@ -650,7 +695,7 @@ void createAndPushSymbol(string name, Type type, int size)
 	symbol.name = name;
 	symbol.type = type;
 	//cout <<"curr name: "<<symbol.name<< "curr offset: " << m_iCurrentOffset << "calling ++"<< endl;
-	
+
 	symbol.offset = m_iCurrentOffset++;
 	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
 
@@ -688,7 +733,8 @@ T_Symbol getSymbol(string name)
 
 	T_Symbol symbol;
 	symbol.type=__Type_INVALID;
-	symbol.name = "__bad__";	
+	symbol.name = "__bad__";
+	symbol.Type_ARRAY_SIZE=-1;	
 	return symbol;
 }
 
