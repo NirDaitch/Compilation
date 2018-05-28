@@ -25,7 +25,7 @@
 	int m_iFUNCTION_CurrentOffset = -1;
 	list<T_Symbol> funcArgs;
 	
-	vector<Type> funcCallTypes;
+	vector<EXP_ATTRIBUTE> funcCallTypes;
 
 
 	///////// OUR FUNCTIONS DEFINITIONS//////////
@@ -41,7 +41,7 @@
 	void createFunctionObj(string name, Type type);
 	void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args);
 	
-	void validateCallFunction(string funcName, vector<Type> callArgs);
+	void validateCallFunction(string funcName, vector<EXP_ATTRIBUTE> callArgs);
 	void validateFunctionArg(string varName);
 	
 	vector<string> generateStringTypes(list<T_Symbol> lstArgs);
@@ -146,16 +146,16 @@ endWhile	: {m_iWhileCounter--;};
 Call 		:	ID LPAREN ExpList RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();}
 			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();};
 				
-ExpList 	:	Exp {funcCallTypes.push_back($1.type);}
-			|	Exp COMMA ExpList {funcCallTypes.push_back($1.type);};
+ExpList 	:	Exp {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);}
+			|	Exp COMMA ExpList {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);};
 			
 Type		:	INT		{ $$.type = Type_INT;}
 			|	BYTE	{ $$.type = Type_BYTE;}
 			|	BOOL	{ $$.type = Type_BOOL;};
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
-			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); isIntOrByte($3.type);}
-			|	ID				{$$.type = validateAndGetTypeByName($1.name, true);}
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type);}
+			|	ID				{$$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name;}
 			|	Call			{$$.type = $1.type;}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value;}
@@ -203,7 +203,7 @@ void validateFunctionArg(string varName)
 	}
 }
 
-void validateCallFunction(string funcName, vector<Type> callArgs)
+void validateCallFunction(string funcName, vector<EXP_ATTRIBUTE> callArgs)
 {
 	//cout << "validating " << funcName << endl;
 	T_Symbol symbFunc=getSymbol(funcName);
@@ -225,14 +225,30 @@ void validateCallFunction(string funcName, vector<Type> callArgs)
 		T_Symbol currSymbol = *it;
 		//cout << "currSymbol name: " << currSymbol.name << ", type is: " << currSymbol.type << endl;
 		//cout << "args[i] is: " << callArgs[i] << endl;
-		if (currSymbol.type != callArgs[i])
+		if (currSymbol.type != callArgs[i].type)
 		{
-			if (!(currSymbol.type == Type_INT && callArgs[i] == Type_BYTE))
+			if (!(currSymbol.type == Type_INT && callArgs[i].type == Type_BYTE))
 			{
 				vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
 				errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
 				exit(0);
 			}	
+		}
+		else 
+		{
+			if (currSymbol.Type_ARRAY_SIZE != -1)
+			{
+				T_Symbol argSymb = getSymbol(callArgs[i].name);
+				if (argSymb.type != __Type_INVALID && argSymb.Type_ARRAY_SIZE != -1)
+				{
+					if (argSymb.Type_ARRAY_SIZE != currSymbol.Type_ARRAY_SIZE)
+					{
+						vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+						errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+						exit(0);
+					}
+				}
+			}
 		}
 		i++;
 	}
