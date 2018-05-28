@@ -549,6 +549,11 @@ void validateDefined(string name, bool isVariable)
 		}		
 		exit(0);
 	}
+	if (result.isFunction == true &&  isVariable == true)
+	{
+		errorUndef(yylineno, name);	
+		exit(0);
+	}
 
 }
 
