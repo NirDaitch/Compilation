@@ -32,7 +32,7 @@
 	void validateNotAlreadyDefined(string name);
 	void validateDefined(string name, bool isVariable);
 	void validateAssignment(Type lhs, Type rhs);
-	void validateAssignmentDynamic(string nameLHS, string rhsName, Type rhsType);
+	void validateAssignmentDynamic(string nameLHS, string rhsName, Type rhsType, bool is_array_at_index);
 	Type validateAndGetTypeByName(string name, bool isVariable);
 	void checkByteSize(int value, string valueInStringForm);
 	void createAndPushSymbol(string name, Type type, int size);
@@ -126,7 +126,7 @@ Statement	:	LBRACE	ScopeStart	Statements ScopeEnd	RBRACE
 			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,$1.type,$4.num_value); /*we take: A[5 b] same as: A[5]*/ }
-			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type);}
+			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type,$3.is_array_at_index);}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type);}
 			|	Call SC
 			|	RETURN  SC
@@ -152,9 +152,10 @@ ExpList 	:	Exp {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; 
 Type		:	INT		{ $$.type = Type_INT;}
 			|	BYTE	{ $$.type = Type_BYTE;}
 			|	BOOL	{ $$.type = Type_BOOL;};
+
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
-			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type);}
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type);$$.is_array_at_index=true;}
 			|	ID				{$$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name;}
 			|	Call			{$$.type = $1.type;}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
@@ -377,14 +378,16 @@ void isIntOrByte(Type t)
 	}
 }
 
-void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType)
+void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType, bool is_array_at_index)
 {
+	
 	T_Symbol lhsSymbol=getSymbol(lhsName);
 	if(lhsSymbol.type == __Type_INVALID)
 	{
 		//should never reach here because we called validateDefined on the lhs symbol before this func
 
 		//you called the wrong error again! i fixed it.
+		
 		errorUndef(yylineno, lhsName);	
 		exit(0);
 	}
@@ -394,10 +397,11 @@ void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType)
 	if (lhsSymbol.Type_ARRAY_SIZE != -1)
 	{
 		/// lhs is an array
-
+		
 		if(rhsSymbol.type == __Type_INVALID) 
 		{
 			///rhs is not even a variable
+			
 			errorMismatch(yylineno);
 			exit(0);
 			return;
@@ -405,6 +409,7 @@ void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType)
 
 		if (rhsSymbol.Type_ARRAY_SIZE != lhsSymbol.Type_ARRAY_SIZE)
 		{
+			
 			errorMismatch(yylineno);
 			exit(0);
 		}
@@ -412,9 +417,17 @@ void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType)
 		
 		if (rhsSymbol.type != lhsSymbol.type)
 		{
+			
 			errorMismatch(yylineno);
 			exit(0);
 		}
+		
+		if(is_array_at_index)
+		{		
+			 errorMismatch(yylineno);
+			 exit(0);
+		}
+		
 		
 		///both are arrays from same size and type! SUCCESS
 	}
@@ -422,6 +435,7 @@ void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType)
 	{
 		if(rhsSymbol.type != __Type_INVALID && rhsSymbol.Type_ARRAY_SIZE != -1) 
 		{
+			
 			errorMismatch(yylineno);
 			exit(0);
 			return;

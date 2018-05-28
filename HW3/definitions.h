@@ -25,12 +25,16 @@ class EXP_ATTRIBUTE {
 	std::string name;
     Type type;
     int num_value;
+
+    bool is_array_at_index;
 	
 	
 	EXP_ATTRIBUTE() 
 	{
 		this->name = "";		
 		this->num_value=-1;
+		this->is_array_at_index=false;
+
 	};
 	~EXP_ATTRIBUTE(){};
 };
