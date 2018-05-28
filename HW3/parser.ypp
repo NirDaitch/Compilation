@@ -504,8 +504,15 @@ vector<string> generateStringTypes(list<T_Symbol> lstArgs)
 	for (list<T_Symbol>::iterator it=lstArgs.begin(); it!=lstArgs.end(); ++it) 
 	{
 		T_Symbol symbol = *it;
-		//cout << "symbol type is" << symbol.type << endl;
-		lstArgsAsStrings.push_back(TYPES_TO_STRING[symbol.type]);
+		if (symbol.Type_ARRAY_SIZE != -1)
+		{
+			string sArrayType = makeArrayType(TYPES_TO_STRING[symbol.type], symbol.Type_ARRAY_SIZE);
+			lstArgsAsStrings.push_back(sArrayType);
+		}
+		else
+		{
+			lstArgsAsStrings.push_back(TYPES_TO_STRING[symbol.type]);
+		}
 	}
 	return lstArgsAsStrings;
 }
