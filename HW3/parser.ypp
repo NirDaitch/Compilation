@@ -650,6 +650,7 @@ void createAndPushSymbol(string name, Type type, int size)
 	symbol.name = name;
 	symbol.type = type;
 	//cout <<"curr name: "<<symbol.name<< "curr offset: " << m_iCurrentOffset << "calling ++"<< endl;
+	
 	symbol.offset = m_iCurrentOffset++;
 	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
 
