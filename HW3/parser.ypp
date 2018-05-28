@@ -542,18 +542,26 @@ void end_Scope()
 
 					string sArrayType = makeArrayType(TYPES_TO_STRING[curr.type], curr.Type_ARRAY_SIZE);
 					printID(curr.name, curr.offset, sArrayType);
-					//m_iCurrentOffset-=(curr.Type_ARRAY_SIZE-1);
+					//cout <<"curr name: "<<curr.name<< "curr offset: " << m_iCurrentOffset << "calling -arraysize"<< endl;
+
+					if(curr.offset>=0)
+						m_iCurrentOffset-=curr.Type_ARRAY_SIZE;
 				}
 				else
 				{
 					printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
+					//cout <<"curr name: "<<curr.name<< "curr offset: " << m_iCurrentOffset << "calling --" <<endl;
+					if(curr.offset>=0)
+						m_iCurrentOffset--;
+					
+					
 				}
 
-				//m_iCurrentOffset--;
+				
 			}
 		}
 	}
-	m_iCurrentOffset=0;
+	
 	m_stScopeStack.pop_front();
 }
 
@@ -641,12 +649,14 @@ void createAndPushSymbol(string name, Type type, int size)
 	T_Symbol symbol;
 	symbol.name = name;
 	symbol.type = type;
+	//cout <<"curr name: "<<symbol.name<< "curr offset: " << m_iCurrentOffset << "calling ++"<< endl;
 	symbol.offset = m_iCurrentOffset++;
 	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
 
 
 	if(size>-1)//its an array!
 	{
+		//cout <<"curr name: "<<symbol.name<< "curr offset: " << m_iCurrentOffset << "calling +arraysize"<< endl;
 		symbol.Type_ARRAY_SIZE=size;		
 		m_iCurrentOffset+=size-1;
 	}
