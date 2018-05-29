@@ -258,7 +258,7 @@ void validateCallFunction(string funcName, vector<EXP_ATTRIBUTE> callArgs)
 	{
 		T_Symbol currSymbol = *it;
 		//cout << "currSymbol name: " << currSymbol.name << ", type is: " << currSymbol.type << endl;
-		//cout << "args[i] is: " << callArgs[i] << endl;
+		//cout << "args[i] is: " << callArgs[i].name << endl;
 		if (currSymbol.type != callArgs[i].type)
 		{
 			if (!(currSymbol.type == Type_INT && callArgs[i].type == Type_BYTE))
@@ -273,14 +273,29 @@ void validateCallFunction(string funcName, vector<EXP_ATTRIBUTE> callArgs)
 			if (currSymbol.Type_ARRAY_SIZE != -1)
 			{
 				T_Symbol argSymb = getSymbol(callArgs[i].name);
-				if (argSymb.type != __Type_INVALID && argSymb.Type_ARRAY_SIZE != -1)
+				if (argSymb.type != __Type_INVALID)
 				{
-					if (argSymb.Type_ARRAY_SIZE != currSymbol.Type_ARRAY_SIZE)
+					if (argSymb.Type_ARRAY_SIZE != -1)
+					{
+						if (argSymb.Type_ARRAY_SIZE != currSymbol.Type_ARRAY_SIZE)
+						{
+							vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+							errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+							exit(0);
+						}
+					}
+					else
 					{
 						vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
 						errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
 						exit(0);
 					}
+				}
+				else
+				{
+					vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+					errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+					exit(0);
 				}
 			}
 		}
