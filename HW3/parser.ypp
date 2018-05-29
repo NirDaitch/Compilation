@@ -33,11 +33,11 @@
 	void validateNotAlreadyDefined(string name);
 	void validateDefined(string name, bool isVariable);
 	void validateAssignment(Type lhs, Type rhs);
-	void validateAssignmentDynamic(string nameLHS, string rhsName, Type rhsType, bool is_array_at_index);
+	void validateAssignmentDynamic(string nameLHS, string rhsName, Type rhsType, bool rhs_is_array);
 	Type validateAndGetTypeByName(string name, bool isVariable);
 	void checkByteSize(int value, string valueInStringForm);
 	void createAndPushSymbol(string name, Type type, int size);
-	void checkFuncValidReturn(Type type,int size,bool is_array_at_index);
+	void checkFuncValidReturn(Type type,int size,bool return_value_is_array);
 	T_Symbol createFunctionSymbol(string name, Type type, int size);
 	void createFunctionObj(string name, Type type);
 	void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args);
@@ -46,6 +46,8 @@
 	void validateFunctionArg(string varName);
 	bool contains(list<T_Symbol> lstStrings, string sym);
 	vector<string> generateStringTypes(list<T_Symbol> lstArgs);
+	
+	bool getIsArray(string name);
 	
 	void start_Scope();
 	void start_scope_function();
@@ -127,11 +129,11 @@ Statement	:	LBRACE	ScopeStart	Statements 	RBRACE ScopeEnd
 			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,$1.type,$4.num_value); /*we take: A[5 b] same as: A[5]*/ }
-			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type,$3.is_array_at_index);}
+			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type,$3.is_array);}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type);}
 			|	Call SC
-			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, true);}
-			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array_at_index);}
+			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false);}
+			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);}
 			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd  ELSE ScopeStart Statement ScopeEnd
 			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);} ScopeStart Statement ScopeEnd endWhile
@@ -156,8 +158,8 @@ Type		:	INT		{ $$.type = Type_INT;}
 
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
-			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type);$$.is_array_at_index=true;}
-			|	ID				{$$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name;}
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type);}
+			|	ID				{$$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name; $$.is_array = getIsArray($1.name);}
 			|	Call			{$$.type = $1.type;}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value;}
@@ -191,6 +193,15 @@ ProgramScopeEnd	:	{end_Scope();}
 			;
 
 %%
+
+bool getIsArray(string name)
+{
+	T_Symbol symbol=getSymbol(name);
+	if(symbol.type != __Type_INVALID) // shouldn't happend but still
+	{
+		return symbol.Type_ARRAY_SIZE != -1;
+	}
+}
 
 void validateFunctionArg(string varName)
 {
@@ -379,7 +390,7 @@ void isIntOrByte(Type t)
 	}
 }
 
-void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType, bool is_array_at_index)
+void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType, bool rhs_is_array)
 {
 	
 	T_Symbol lhsSymbol=getSymbol(lhsName);
@@ -423,7 +434,7 @@ void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType, boo
 			exit(0);
 		}
 		
-		if(is_array_at_index)
+		if(!rhs_is_array)
 		{		
 			 errorMismatch(yylineno);
 			 exit(0);
@@ -434,7 +445,7 @@ void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType, boo
 	}
 	else /// lhs is not an array
 	{
-		if(rhsSymbol.type != __Type_INVALID && rhsSymbol.Type_ARRAY_SIZE != -1) 
+		if(rhs_is_array) 
 		{
 			
 			errorMismatch(yylineno);
@@ -505,9 +516,13 @@ void createFunctionObj(string name, Type type)
 }
 
 
-void checkFuncValidReturn(Type type,int size, bool is_array_at_index)
+void checkFuncValidReturn(Type type,int size, bool return_value_is_array)
 {
-	
+	if (return_value_is_array)
+	{
+		errorMismatch(yylineno);
+		exit(0);
+	}
 
 	for (list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
 	{
@@ -519,7 +534,7 @@ void checkFuncValidReturn(Type type,int size, bool is_array_at_index)
 				T_Symbol curr = *it;
 				if(curr.isFunction)
 				{
-					if((curr.type!=type && !(type == Type_BYTE && curr.type == Type_INT))&& !is_array_at_index)
+					if(curr.type!=type && !(type == Type_BYTE && curr.type == Type_INT))
 					{
 						//cout<<"fun type: "<<curr.type << " type: "<< type;
 						errorMismatch(yylineno);

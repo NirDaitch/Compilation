@@ -26,14 +26,14 @@ class EXP_ATTRIBUTE {
     Type type;
     int num_value;
 
-    bool is_array_at_index;
+    bool is_array;
 	
 	
 	EXP_ATTRIBUTE() 
 	{
 		this->name = "";		
 		this->num_value=-1;
-		this->is_array_at_index=false;
+		this->is_array=false;
 
 	};
 	~EXP_ATTRIBUTE(){};
