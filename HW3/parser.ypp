@@ -43,7 +43,7 @@
 	void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args);
 	
 	void checkRHSNotArray(bool is_array);
-	void checkLHSIsArray(string name);
+	void validateIsArray(string name);
 	
 	void validateCallFunction(string funcName, vector<EXP_ATTRIBUTE> callArgs);
 	void validateFunctionArg(string varName);
@@ -133,7 +133,7 @@ Statement	:	LBRACE	ScopeStart	Statements 	RBRACE ScopeEnd
 			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
 			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,$1.type,$4.num_value); /*we take: A[5 b] same as: A[5]*/ }
 			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type,$3.is_array);}
-			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type); checkRHSNotArray($6.is_array); checkLHSIsArray($1.name);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type); checkRHSNotArray($6.is_array); validateIsArray($1.name);}
 			|	Call SC
 			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);}
@@ -161,7 +161,7 @@ Type		:	INT		{ $$.type = Type_INT;}
 
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
-			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type);}
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);}
 			|	ID				{$$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name; $$.is_array = getIsArray($1.name);}
 			|	Call			{$$.type = $1.type;}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
@@ -196,7 +196,7 @@ ProgramScopeEnd	:	{end_Scope();}
 			;
 
 %%
-void checkLHSIsArray(string name)
+void validateIsArray(string name)
 {
 	if (!getIsArray(name))
 	{
