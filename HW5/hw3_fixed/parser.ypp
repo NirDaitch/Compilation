@@ -248,7 +248,7 @@ void validateCallFunction(string funcName, vector<EXP_ATTRIBUTE> callArgs)
 	}
 	if (symbFunc.lstArgs.size() != callArgs.size())
 	{
-		cout << "args list size is different, got " << callArgs.size() << endl;
+		//cout << "args list size is different, got " << callArgs.size() << endl;
 		vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
 		errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
 		exit(0);
