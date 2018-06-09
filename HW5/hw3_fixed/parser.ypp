@@ -1,0 +1,819 @@
+
+%{
+	#include <iostream>
+	#include "definitions.h"
+	#include <algorithm>
+	#include "output.hpp"
+	#include <stdio.h>
+	#include <map>
+	
+	using namespace std;
+	using namespace output;
+
+	
+	extern int yylineno;
+	extern int yylex();
+	int yyerror(const char *);
+
+	///////// OUR GLOBAL VARS DEFINITIONS//////////
+	int m_iWhileCounter = 0;
+	ScopeStack m_stScopeStack;
+	int m_iCurrentOffset = 0;
+	vector<string>  TYPES_TO_STRING;
+	
+	
+	////////////////CURRENT FUCNTION DATA///////////////
+	int m_iFUNCTION_CurrentOffset = -1;
+	list<T_Symbol> funcArgs;
+	
+	vector<EXP_ATTRIBUTE> funcCallTypes;
+
+
+	///////// OUR FUNCTIONS DEFINITIONS//////////
+	void validateNotAlreadyDefined(string name);
+	void validateDefined(string name, bool isVariable);
+	void validateAssignment(Type lhs, Type rhs);
+	void validateAssignmentDynamic(string nameLHS, string rhsName, Type rhsType, bool rhs_is_array);
+	Type validateAndGetTypeByName(string name, bool isVariable);
+	void checkByteSize(int value, string valueInStringForm);
+	void createAndPushSymbol(string name, Type type, int size);
+	void checkFuncValidReturn(Type type,int size,bool return_value_is_array);
+	T_Symbol createFunctionSymbol(string name, Type type, int size);
+	void createFunctionObj(string name, Type type);
+	void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args);
+	
+	void checkRHSNotArray(bool is_array);
+	void validateIsArray(string name);
+	
+	void validateCallFunction(string funcName, vector<EXP_ATTRIBUTE> callArgs);
+	void validateFunctionArg(string varName);
+	bool contains(list<T_Symbol> lstStrings, string sym);
+	vector<string> generateStringTypes(list<T_Symbol> lstArgs);
+	
+	bool getIsArray(string name);
+	
+	void start_Scope();
+	void start_scope_function();
+	void program_scope_start();
+	
+	void end_Scope();
+	int getExpSizeFromTable(string name);
+	void isBoolean(Type t);
+	void isIntOrByte(Type t);
+	void validateArraySize(int numValue, string name);
+	
+	void checkHasMain();
+	
+	Type getTypeBinop(Type t1, Type t2);
+	T_Symbol getSymbol(string name);
+%}
+
+%token VOID INT BYTE RETURN B SC COMMA ID STRING TRUE FALSE
+
+%nonassoc RPAREN LPAREN LBRACE RBRACE LBRACK RBRACK
+
+%nonassoc IF
+%nonassoc ELSE
+ 
+%token WHILE
+%token BREAK
+%token NUM
+%token BOOL
+
+%right ASSIGN
+
+%left OR    
+%left AND    
+
+%left 	RELOP_2
+%nonassoc RELOP_1
+
+%left BINOP_2
+%left BINOP_1
+
+%right NOT
+
+
+
+
+%%
+
+Program		:	ProgramScopeStart Funcs {checkHasMain();} ProgramScopeEnd ;
+
+Funcs		:	FuncDecl	Funcs
+			|	;
+
+FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements RBRACE ScopeEnd
+			;
+
+FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();};	
+
+RetType		:	Type {$$.type=$1.type;}
+			| 	VOID {$$.type=Type_VOID;}
+			;
+
+Formals		:	FormalsList
+			|	;
+
+FormalsList	:	FormalDecl
+			|	FormalDecl	COMMA	FormalsList;
+				
+FormalDecl	:	Type	ID { funcArgs.push_back(createFunctionSymbol($2.name, $1.type, -1));}
+			|	Type	ID	LBRACK	NUM	RBRACK { validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
+			|	Type	ID	LBRACK	NUM		B	RBRACK { checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name);  funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
+			;
+				
+Statements	:	Statement
+			|	Statements	 Statement
+			;
+
+Statement	:	LBRACE	ScopeStart	Statements 	RBRACE ScopeEnd
+			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
+			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
+			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
+			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,$1.type,$4.num_value); /*we take: A[5 b] same as: A[5]*/ }
+			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type,$3.is_array);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type); checkRHSNotArray($6.is_array); validateIsArray($1.name);}
+			|	Call SC
+			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false);}
+			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);}
+			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd
+			|   IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd  ELSE ScopeStart Statement ScopeEnd
+			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);} ScopeStart Statement ScopeEnd endWhile
+			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}}
+			;
+			
+
+
+startWhile	: {m_iWhileCounter++;};
+endWhile	: {m_iWhileCounter--;};
+
+		
+Call 		:	ID LPAREN ExpList RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();}
+			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();};
+				
+ExpList 	:	Exp {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);}
+			|	Exp COMMA ExpList {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);};
+			
+Type		:	INT		{ $$.type = Type_INT;}
+			|	BYTE	{ $$.type = Type_BYTE;}
+			|	BOOL	{ $$.type = Type_BOOL;};
+
+			
+Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);}
+			|	ID				{$$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name; $$.is_array = getIsArray($1.name);}
+			|	Call			{$$.type = $1.type;}
+			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
+			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value;}
+			| 	STRING			{ $$.type = Type_STRING;}
+			|	TRUE			{ $$.type = Type_BOOL;}
+			|	FALSE			{ $$.type = Type_BOOL;}
+			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
+			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
+			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
+			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
+			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
+			| 	Exp RELOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
+			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL;}
+			;
+
+Exp_boolean	:   Exp {isBoolean($1.type);}
+			;
+
+ScopeStart	:	{start_Scope();}
+			;
+			
+ProgramScopeStart	:	{ program_scope_start();}
+			;
+			
+ScopeStartFunction	:	{start_scope_function();}
+			;
+		
+ScopeEnd	:	{end_Scope();}
+			;
+ProgramScopeEnd	:	{end_Scope();}
+			;
+
+%%
+void validateIsArray(string name)
+{
+	if (!getIsArray(name))
+	{
+		errorMismatch(yylineno);
+		exit(0);
+	}
+}
+
+
+void checkRHSNotArray(bool is_array)
+{
+	if (is_array)
+	{
+		errorMismatch(yylineno);
+		exit(0);
+	}
+}
+
+bool getIsArray(string name)
+{
+	T_Symbol symbol=getSymbol(name);
+	if(symbol.type != __Type_INVALID) // should always be defined but still
+	{
+		return symbol.Type_ARRAY_SIZE != -1;
+	}
+}
+
+void validateFunctionArg(string varName)
+{
+	T_Symbol symbol=getSymbol(varName);
+	if(symbol.type != __Type_INVALID)
+	{
+		if(symbol.isFunction)
+		{
+			errorDef(yylineno, varName);
+			exit(0);
+		}
+	}
+}
+
+void validateCallFunction(string funcName, vector<EXP_ATTRIBUTE> callArgs)
+{
+	//cout << "validating " << funcName << endl;
+	T_Symbol symbFunc=getSymbol(funcName);
+	if(symbFunc.type == __Type_INVALID || !symbFunc.isFunction)
+	{
+		errorUndefFunc(yylineno, funcName);
+		exit(0);
+	}
+	if (symbFunc.lstArgs.size() != callArgs.size())
+	{
+		cout << "args list size is different, got " << callArgs.size() << endl;
+		vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+		errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+		exit(0);
+	}
+	int i = 0;
+	for (list<T_Symbol>::reverse_iterator it=symbFunc.lstArgs.rbegin(); it!=symbFunc.lstArgs.rend(); ++it)
+	{
+		T_Symbol currSymbol = *it;
+		//cout << "currSymbol name: " << currSymbol.name << ", type is: " << currSymbol.type << endl;
+		//cout << "args[i] is: " << callArgs[i].name << endl;
+		//cout << "currSymbol.type " << (int)currSymbol.type << " callArgs[i].type" << (int)callArgs[i].type << endl;
+		if (currSymbol.type != callArgs[i].type)
+		{
+			if (!(currSymbol.type == Type_INT && callArgs[i].type == Type_BYTE))
+			{
+				vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+				errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+				exit(0);
+			}	
+		}
+		else 
+		{
+			if (currSymbol.Type_ARRAY_SIZE != -1)
+			{
+				T_Symbol argSymb = getSymbol(callArgs[i].name);
+				if (argSymb.type != __Type_INVALID)
+				{
+					if (argSymb.Type_ARRAY_SIZE != -1)
+					{
+						if (argSymb.Type_ARRAY_SIZE != currSymbol.Type_ARRAY_SIZE)
+						{
+							vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+							errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+							exit(0);
+						}
+					}
+					else
+					{
+						vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+						errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+						exit(0);
+					}
+				}
+				else
+				{
+					vector<string> lstStringArgs = generateStringTypes(symbFunc.lstArgs);
+					errorPrototypeMismatch(yylineno, funcName, lstStringArgs);
+					exit(0);
+				}
+			}
+		}
+		i++;
+	}
+	
+}
+
+void checkHasMain()
+{
+	string sMainFuncName = "main";
+	T_Symbol mainFunc=getSymbol(sMainFuncName);
+	if(mainFunc.type != __Type_INVALID)
+	{
+		if(mainFunc.isFunction && mainFunc.type == Type_VOID)
+		{
+			if (mainFunc.lstArgs.empty())
+			{
+				return;
+			}
+		}
+	}
+	errorMainMissing();	
+	exit(0);
+}
+
+void program_scope_start()
+{
+	start_Scope();
+	
+	T_Symbol stringSymbol;
+	stringSymbol.type = Type_STRING;
+	list<T_Symbol> lstArgs2;
+	lstArgs2.push_back(stringSymbol);
+	addFunctionToSymbolTable("print", Type_VOID, lstArgs2);
+	
+	T_Symbol integerSymbol;
+	integerSymbol.type = Type_INT;
+	list<T_Symbol> lstArgs1;
+	lstArgs1.push_back(integerSymbol);
+	addFunctionToSymbolTable("printi", Type_VOID, lstArgs1);
+
+}
+
+void addFunctionToSymbolTable(string name, Type returnType, list<T_Symbol> args)
+{
+	T_Symbol funcSymbol;
+	funcSymbol.isFunction = true;
+	funcSymbol.name = name;
+	funcSymbol.type = returnType;
+
+	for (list<T_Symbol>::iterator it=args.begin(); it!=args.end(); ++it) 
+	{
+		T_Symbol symbol = *it;
+		funcSymbol.lstArgs.push_back(symbol);
+	}
+
+	m_stScopeStack.front().addSymbol(funcSymbol);
+}
+
+void validateArraySize(int numValue, string name)
+{
+	if (numValue <= 0 || numValue >= 256)
+	{
+		errorInvalidArraySize(yylineno, name);
+		exit(0);
+	}
+}
+
+Type validateAndGetTypeByName(string name, bool isVariable)
+{
+	for (list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
+	{
+		SymbolTable& currentTable = *it_st;
+		if (currentTable.lstSymbols.size() > 0) {
+			for (list<T_Symbol>::iterator it=currentTable.lstSymbols.begin(); it!=currentTable.lstSymbols.end(); ++it)
+			{
+				T_Symbol curr = *it;
+				if(name == curr.name)
+				{
+					return curr.type;
+				}
+			}
+			
+		}
+	}
+	
+	if(isVariable==true)
+	{
+		errorUndef(yylineno, name);	
+	}
+	else
+	{
+		errorUndefFunc(yylineno, name);
+	}	
+	exit(0);
+	return (Type) -1;
+}
+
+Type getTypeBinop(Type t1, Type t2)
+{
+	if (t1 == t2)
+	{
+		//cout << "binop type is: " << t1 << endl;
+		return t1;
+	}
+	//cout << "binop type is: " << Type_INT << endl;
+	return Type_INT;
+}
+
+void isBoolean(Type t)
+{
+	
+	if (t != Type_BOOL)
+	{
+		errorMismatch(yylineno);
+		exit(0);
+	}
+}
+
+void isIntOrByte(Type t)
+{
+	//cout << "t type: " << t << endl;
+	if (t != Type_INT && t != Type_BYTE)
+	{
+		errorMismatch(yylineno);
+		exit(0);
+	}
+}
+
+void validateAssignmentDynamic(string lhsName, string rhsName, Type rhsType, bool rhs_is_array)
+{
+	
+	T_Symbol lhsSymbol=getSymbol(lhsName);
+	if(lhsSymbol.type == __Type_INVALID)
+	{
+		//should never reach here because we called validateDefined on the lhs symbol before this func
+
+		//you called the wrong error again! i fixed it.
+		
+		errorUndef(yylineno, lhsName);	
+		exit(0);
+	}
+
+	T_Symbol rhsSymbol=getSymbol(rhsName);
+	
+	if (lhsSymbol.Type_ARRAY_SIZE != -1)
+	{
+		/// lhs is an array
+		
+		if(rhsSymbol.type == __Type_INVALID) 
+		{
+			///rhs is not even a variable
+			
+			errorMismatch(yylineno);
+			exit(0);
+			return;
+		}
+
+		if (rhsSymbol.Type_ARRAY_SIZE != lhsSymbol.Type_ARRAY_SIZE)
+		{
+			
+			errorMismatch(yylineno);
+			exit(0);
+		}
+		///both are arrays from same size!
+		
+		if (rhsSymbol.type != lhsSymbol.type)
+		{
+			
+			errorMismatch(yylineno);
+			exit(0);
+		}
+		
+		if(!rhs_is_array)
+		{		
+			 errorMismatch(yylineno);
+			 exit(0);
+		}
+		
+		
+		///both are arrays from same size and type! SUCCESS
+	}
+	else /// lhs is not an array
+	{
+		if(rhs_is_array) 
+		{
+			
+			errorMismatch(yylineno);
+			exit(0);
+			return;
+		}
+		validateAssignment(lhsSymbol.type, rhsType);
+	}
+}
+
+void validateAssignment(Type lhs, Type rhs)
+{
+	
+
+	if (lhs != rhs)
+	{
+		if (lhs == Type_INT && rhs == Type_BYTE)
+		{
+			return;
+		}		
+		errorMismatch(yylineno);
+		exit(0);
+	}
+}
+
+void start_Scope()
+{
+	SymbolTable newTable;
+	m_stScopeStack.push_front(newTable);
+	
+}
+bool contains(list<T_Symbol> lstStrings, string sym)
+{
+	vector<string> vec;
+	for (list<T_Symbol>::iterator it=lstStrings.begin(); it!=lstStrings.end(); ++it) 
+	{
+		T_Symbol currSym = *it;
+		vec.push_back(currSym.name);
+	}
+	return find(vec.begin(), vec.end(), sym) != vec.end();
+}
+
+void createFunctionObj(string name, Type type)
+{
+	list<T_Symbol> lstArgsTmp;
+	
+	for (list<T_Symbol>::iterator it=funcArgs.begin(); it!=funcArgs.end(); ++it) 
+	{
+		T_Symbol symbol = *it;
+
+		validateFunctionArg(symbol.name);
+		if (symbol.name.compare(name) == 0)
+		{
+			///current function arg has same name as function
+			errorDef(yylineno, symbol.name);	
+			exit(0);
+		}
+		if(contains(lstArgsTmp,symbol.name))
+		{
+			//2 function args with same name
+			errorDef(yylineno, symbol.name);	
+			exit(0);
+		}		
+		lstArgsTmp.push_back(symbol);
+	}
+	
+	addFunctionToSymbolTable(name, type, lstArgsTmp);
+}
+
+
+void checkFuncValidReturn(Type type,int size, bool return_value_is_array)
+{
+	if (return_value_is_array)
+	{
+		errorMismatch(yylineno);
+		exit(0);
+	}
+
+	for (list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
+	{
+		SymbolTable& currentTable = *it_st;
+		if (currentTable.lstSymbols.size() > 0)
+		 {
+			for (list<T_Symbol>::reverse_iterator it=currentTable.lstSymbols.rbegin(); it!=currentTable.lstSymbols.rend(); ++it)
+			{
+				T_Symbol curr = *it;
+				if(curr.isFunction)
+				{
+					if(curr.type!=type && !(type == Type_BYTE && curr.type == Type_INT))
+					{
+						//cout<<"fun type: "<<curr.type << " type: "<< type;
+						errorMismatch(yylineno);
+						exit(0);
+					}
+					//its ok-finish
+					return;
+				}
+			}
+			
+		}
+	}
+
+
+	// errorMismatch(yylineno);
+	// exit(0);
+
+
+
+
+}
+void start_scope_function()
+{
+	SymbolTable newTable;
+	for (list<T_Symbol>::iterator it=funcArgs.begin(); it!=funcArgs.end(); ++it) 
+	{
+		T_Symbol symbol = *it;
+		//cout << "adding symbol: " << symbol.name << endl;
+		newTable.addSymbol(symbol);
+	}
+	m_stScopeStack.push_front(newTable);
+}
+
+void end_Scope()
+{
+	SymbolTable& top = m_stScopeStack.front();
+	endScope();
+	if (top.lstSymbols.size() > 0) {
+		for (list<T_Symbol>::iterator it=top.lstSymbols.begin(); it!=top.lstSymbols.end(); ++it) {
+			T_Symbol curr = *it;
+			
+
+			
+			if (curr.isFunction)
+			{
+				vector<string> lstArgsAsStrings = generateStringTypes(curr.lstArgs);
+				//cout << "function type is: " << TYPES_TO_STRING[curr.type] << endl;
+				string sFunctionType = makeFunctionType(TYPES_TO_STRING[curr.type], lstArgsAsStrings);
+				printID(curr.name, 0, sFunctionType);
+			}
+			else
+			{
+				
+
+				if (curr.Type_ARRAY_SIZE != -1)
+				{
+
+					string sArrayType = makeArrayType(TYPES_TO_STRING[curr.type], curr.Type_ARRAY_SIZE);
+					printID(curr.name, curr.offset, sArrayType);
+					//cout <<"curr name: "<<curr.name<< "curr offset: " << m_iCurrentOffset << "calling -arraysize"<< endl;
+
+					if(curr.offset>=0)
+						m_iCurrentOffset-=curr.Type_ARRAY_SIZE;
+				}
+				else
+				{
+					printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
+					//cout <<"curr name: "<<curr.name<< "curr offset: " << m_iCurrentOffset << "calling --" <<endl;
+					if(curr.offset>=0)
+						m_iCurrentOffset--;
+					
+					
+				}
+
+				
+			}
+		}
+	}
+	
+	m_stScopeStack.pop_front();
+}
+
+vector<string> generateStringTypes(list<T_Symbol> lstArgs)
+{
+	vector<string> lstArgsAsStrings;
+	for (list<T_Symbol>::iterator it=lstArgs.begin(); it!=lstArgs.end(); ++it) 
+	{
+		T_Symbol symbol = *it;
+		if (symbol.Type_ARRAY_SIZE != -1)
+		{
+			string sArrayType = makeArrayType(TYPES_TO_STRING[symbol.type], symbol.Type_ARRAY_SIZE);
+			lstArgsAsStrings.push_back(sArrayType);
+		}
+		else
+		{
+			lstArgsAsStrings.push_back(TYPES_TO_STRING[symbol.type]);
+		}
+	}
+	return lstArgsAsStrings;
+}
+
+void validateNotAlreadyDefined(string name)
+{
+	//cout << " name is: " << name << endl;
+	T_Symbol result=getSymbol(name);
+	if(result.type!=__Type_INVALID)
+	{
+		//if type is not invalid, symbol exists
+		//, bad.
+		errorDef(yylineno, name);	
+		exit(0);
+	}	
+	
+}
+
+
+//will return error if its not defined. 
+void validateDefined(string name, bool isVariable) 
+{
+	T_Symbol result=getSymbol(name);
+	if(result.type==__Type_INVALID)
+	{
+		//doesnt exist, return error
+		if(isVariable==true)
+		{
+			errorUndef(yylineno, name);	
+		}
+		else
+		{
+			errorUndefFunc(yylineno, name);
+		}		
+		exit(0);
+	}
+	if (result.isFunction == true &&  isVariable == true)
+	{
+		errorUndef(yylineno, name);	
+		exit(0);
+	}
+
+}
+
+T_Symbol createFunctionSymbol(string name, Type type, int size)
+{
+	//cout << "createFunctionSymbol called with name: " << name << endl;
+	T_Symbol symbol;
+	symbol.name = name;
+	symbol.type = type;
+	
+	if(size>-1)//its an array!
+	{
+		symbol.Type_ARRAY_SIZE=size;		
+		m_iFUNCTION_CurrentOffset-=(size-1);
+	}
+
+	symbol.offset = m_iFUNCTION_CurrentOffset--;
+	
+	return symbol;
+}
+
+int getExpSizeFromTable(string name)
+{
+	T_Symbol sym=getSymbol(name);
+	return sym.Type_ARRAY_SIZE;
+}
+
+
+
+void createAndPushSymbol(string name, Type type, int size)
+{
+	//cout << "creating symbol with name: " << name << " in line: " << yylineno << endl;
+	
+	T_Symbol symbol;
+	symbol.name = name;
+	symbol.type = type;
+	//cout <<"curr name: "<<symbol.name<< "curr offset: " << m_iCurrentOffset << "calling ++"<< endl;
+
+	symbol.offset = m_iCurrentOffset++;
+	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
+
+
+	if(size>-1)//its an array!
+	{
+		//cout <<"curr name: "<<symbol.name<< "curr offset: " << m_iCurrentOffset << "calling +arraysize"<< endl;
+		symbol.Type_ARRAY_SIZE=size;		
+		m_iCurrentOffset+=size-1;
+	}
+
+	m_stScopeStack.front().addSymbol(symbol);
+}
+
+
+T_Symbol getSymbol(string name)
+{
+//if the element doesnt exist, returns a symbol with __Type_INVALID type
+	for (list<SymbolTable>::iterator it_st=m_stScopeStack.begin(); it_st!=m_stScopeStack.end(); ++it_st)
+	{
+		SymbolTable& currentTable = *it_st;
+		if (currentTable.lstSymbols.size() > 0) {
+			for (list<T_Symbol>::iterator it=currentTable.lstSymbols.begin(); it!=currentTable.lstSymbols.end(); ++it)
+			{
+				T_Symbol curr = *it;
+				if(name.compare(curr.name) == 0)
+				{
+					return curr;
+				}
+			}
+			
+		}
+	}
+
+
+	T_Symbol symbol;
+	symbol.type=__Type_INVALID;
+	symbol.name = "__bad__";
+	symbol.Type_ARRAY_SIZE=-1;	
+	return symbol;
+}
+
+
+void checkByteSize(int value, string valueInStringForm)
+{
+	if(value>255) 
+	{
+		errorByteTooLarge(yylineno,valueInStringForm); 
+		exit(0);
+	}
+
+}
+
+
+int main()
+{	TYPES_TO_STRING.push_back("INT");
+	TYPES_TO_STRING.push_back("BYTE");
+	TYPES_TO_STRING.push_back("STRING");
+	TYPES_TO_STRING.push_back("VOID");
+	TYPES_TO_STRING.push_back("BOOL");
+	yyparse();
+}
+
+int yyerror(const char * message)
+{
+	errorSyn(yylineno);
+	///maybe pop stack here
+	exit(0);
+}

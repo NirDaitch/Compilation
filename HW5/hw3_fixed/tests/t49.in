@@ -1,0 +1,12 @@
+//array param
+int foo(int m, int a[30], byte n) {
+	bool c;
+	a[0] = 5;
+}
+
+void main() {
+	int a[30];
+	int c[25];
+	foo(1,a,1b);
+	foo(1,c,1b);
+}

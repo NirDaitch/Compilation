@@ -1,0 +1,5 @@
+// undef variable
+void main() {
+    int y = 47;
+    printi(x);
+}

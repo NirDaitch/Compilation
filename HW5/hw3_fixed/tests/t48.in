@@ -1,0 +1,4 @@
+//array size
+void main() {
+	int a[300];
+}

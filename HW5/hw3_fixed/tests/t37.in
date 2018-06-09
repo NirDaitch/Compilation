@@ -1,0 +1,8 @@
+//array elements assignment
+void main() {
+    byte a[30];
+    byte c = a[0];
+    int d = a[0 b];
+    a[c] = c;
+    a[d] = d;
+}

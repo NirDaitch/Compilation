@@ -1,0 +1,4 @@
+t1, t2 - 6 points
+t6, t8, t21, t22, t37, t42, t43 - 3 points
+t5, t18, t23, t35, t39, t44, t46, t47, t48, t49, t50 - 2 points
+all other tests - 1.5 points

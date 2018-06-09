@@ -1,0 +1,29 @@
+---end scope---
+bin BOOL -1
+in BYTE -2
+---end scope---
+bin BOOL -1
+in INT -2
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+---end scope---
+bb BOOL 0
+b1 BYTE 1
+b2 BYTE 2
+i1 INT 3
+i2 INT 4
+b3 BYTE 5
+i3 INT 6
+bb2 BOOL 7
+---end scope---
+print (STRING)->VOID 0
+printi (INT)->VOID 0
+testIn1 (BOOL,BYTE)->VOID 0
+testIn2 (BOOL,INT)->VOID 0
+returnByte ()->BYTE 0
+returnInt ()->INT 0
+returnInt2 ()->INT 0
+returnBool ()->BOOL 0
+main ()->VOID 0

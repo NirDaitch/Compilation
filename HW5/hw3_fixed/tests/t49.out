@@ -1,0 +1,6 @@
+---end scope---
+m INT -1
+a INT[30] -31
+n BYTE -32
+c BOOL 0
+line 11: prototype mismatch, function foo expects arguments (INT,INT[30],BYTE)

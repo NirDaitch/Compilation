@@ -1,0 +1,5 @@
+//return array
+int returnArray() {
+    int a[4];
+    return a;
+}

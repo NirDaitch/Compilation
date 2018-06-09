@@ -1,0 +1,6 @@
+//array assignment 3
+void main() {
+	int a[12];
+	int c;
+	a = c;
+}
