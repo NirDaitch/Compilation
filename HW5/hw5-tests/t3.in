@@ -1,0 +1,26 @@
+void printDiffsArray(byte arr[10]) {
+    int i = 0;
+    int res[9];
+    while (i < 9) {
+        res[i] = arr[i+1] - arr[i];
+        i = i + 1;
+    }
+    print("Diffs:\n");
+    int j = 0;
+    while (j < 9) {
+        printi(res[j]);
+        if (j + 1 < 9) print("\t");
+        j = j+1;
+    }
+    print("\n");
+}
+
+void main() {
+    byte arr[10];
+    arr[1] = 1b;
+    arr[2] = 3b;
+    arr[4] = arr[2] * 16b;
+    arr[7] = 20b;
+    arr[9] = 255b;
+    printDiffsArray(arr);
+}
