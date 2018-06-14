@@ -1,7 +1,0 @@
-// no array return 
-int func[5](){}
-
-void main()
-{
-    int t;
-}

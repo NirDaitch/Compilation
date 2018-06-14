@@ -1,8 +1,0 @@
-//fail param num
-void testIn1(bool bin, byte in){
-    return;
-}
-
-void main() {
-    testIn1(6,7 b,8);
-}

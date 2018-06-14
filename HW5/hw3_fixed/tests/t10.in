@@ -1,8 +1,0 @@
-//fail param type
-void testIn1(bool bin, byte in){
-    return;
-}
-
-void main() {
-    testIn1(true,6);
-}

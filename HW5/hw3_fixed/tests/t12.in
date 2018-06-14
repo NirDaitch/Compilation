@@ -1,8 +1,0 @@
-//fail assign return
-int returnInt() {
-    return 7;
-}
-
-void main() {
-    byte b1 = returnInt();
-}

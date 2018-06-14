@@ -1,7 +1,0 @@
-//array index not numeric
-void main() {
-	int a[30];
-	a[0] = 5;
-	a[0 b] = 6;
-	a[true] = 5;
-}

@@ -1,4 +1,0 @@
----end scope---
-bin BOOL -1
-in BYTE -2
-line 7: prototype mismatch, function testIn1 expects arguments (BOOL,BYTE)

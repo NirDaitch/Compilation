@@ -1,8 +1,0 @@
-//assign void
-void testIn1(bool bin, byte in){
-    return;
-}
-
-void main() {
-    int i = testIn1(true,6b);
-}

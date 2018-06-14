@@ -1,4 +1,0 @@
-void main() {
-    if (true != 6)
-        print("not ok");
-}

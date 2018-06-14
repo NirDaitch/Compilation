@@ -1,8 +1,0 @@
-// already defined
-void main() {
- return;
-}
-
-void f1(byte x) {
-    int x = 5;
-}

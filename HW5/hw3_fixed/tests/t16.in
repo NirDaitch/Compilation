@@ -1,8 +1,0 @@
-//use string as expr
-void callee() {
-    byte variable = "a string";
-}
-
-void main() {
-    callee();
-}

@@ -1,4 +1,0 @@
-// type mismatch
-void main() {
-    print("one string" + "two string");
-}

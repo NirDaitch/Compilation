@@ -1,6 +1,0 @@
-//array assignment 2
-void main() {
-	int a[12];
-	byte c[12];
-	a = c;
-}
