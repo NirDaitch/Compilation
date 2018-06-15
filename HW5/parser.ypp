@@ -83,11 +83,12 @@
 	void markRegisterUnused(int iRegisterNumber);
 	void markRegisterUsed(int iRegisterNumber);
 	
-	int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
+	int generateBinop2Res(string op,EXP_ATTRIBUTE target, EXP_ATTRIBUTE e1, EXP_ATTRIBUTE e2);
 	string performDiv_ResInB1(int iB1Register, int iB2Register);
 	string performMul_ResInB1(int iB1Register, int iB2Register);
 	string intToString(int theInt);
 	int putNumInRegister(int num_value);
+	
 	
 	///////////// maybe unneeded or requires change - was written earlier
 	string putVarInRegister(int iRegisterNumber, string sVarName);
@@ -195,13 +196,13 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
 			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);}
 			|	ID				{$$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name; $$.is_array = getIsArray($1.name);}
 			|	Call			{$$.type = $1.type;}
-			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
+			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;  putNumInRegister($1.num_value);}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value;}
 			| 	STRING			{ $$.type = Type_STRING;}
 			|	TRUE			{ $$.type = Type_BOOL;}
 			|	FALSE			{ $$.type = Type_BOOL;}
-			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes($2.name, $1, $3);}
-			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
+			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
+			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);$$.num_value=generateBinop2Res($2.name,$$,$1,$3);}
 			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
 			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
 			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
@@ -275,33 +276,72 @@ int putNumInRegister(int num_value)
 	string toEmit = "li\t$" + intToString(registerNum) + ", " + intToString(num_value);
 	
 	CodeBuffer::instance().emit(toEmit);
-	
+	markRegisterUnused(registerNum);
+
 	return registerNum;
 }
 
-int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
+int generateBinop2Res(string op,EXP_ATTRIBUTE target, EXP_ATTRIBUTE e1, EXP_ATTRIBUTE e2)
 {
-	//int iB1Register = b1.resultReg;
-	int iB2Register = b2.resultReg;
-
-	if (op.compare("/") == 0)
+	//op is + or - 
+	string res="";
+	int actualResult=0;
+	int targetRegister=getFirstAvailableRegister();
+	if(targetRegister==-1)
 	{
-		CodeBuffer::instance().emit(performDiv_ResInB1(iB1Register, iB2Register));
+		cout << "NO REGISTERS!! OMGOMG\n";
+		exit(0);
 	}
-	else if (op.compare("*") == 0) {
-		CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+
+	markRegisterUsed(targetRegister);
+	int e1Register=getFirstAvailableRegister();
+	if(e1Register==-1)
+	{
+		markRegisterUnused(targetRegister);
+		cout << "NO REGISTERS!! OMGOMG\n";
+		exit(0);
 	}
-	else if (op.compare("-") == 0) {
-		//CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+
+	markRegisterUsed(e1Register);
+	int e2Register=getFirstAvailableRegister();
+	if(e2Register==-1)
+	{
+		markRegisterUnused(targetRegister);
+		markRegisterUnused(e1Register);
+		cout << "NO REGISTERS!! OMGOMG\n";
+		exit(0);
 	}
-	else if (op.compare("+") == 0) {
-		//CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+
+	markRegisterUsed(e2Register);
+	T_Symbol e1Symbol=getSymbol(e1.name);
+	T_Symbol e2Symbol=getSymbol(e2.name);
+	res+="lw\t$" + intToString(e1Register) + "," + intToString(e1Symbol.offset) + "($fp)\n" ;
+	res+="lw\t$" + intToString(e2Register) + "," + intToString(e2Symbol.offset) + "($fp)\n" ;
+	if(op.compare("+") == 0)
+	{
+		res+="add\t$" + intToString(targetRegister) + ",$" + intToString(e1Register) + ",$" + intToString(e2Register) + "\n";
+		actualResult=e1.num_value;
+		actualResult+=e2.num_value;
+
 	}
-	
-	markRegisterUnused(iB2Register);
-	
-	return iB1Register;
-	//// result in iB1Register
+	else // (op.compare("-") == 0)
+	{
+		res+="sub\t$" + intToString(targetRegister) + ",$" + intToString(e1Register) + ",$" + intToString(e2Register) + "\n";
+		actualResult=e1.num_value;
+		actualResult-=e2.num_value;
+	}
+
+
+	CodeBuffer::instance().emit(res);
+
+	markRegisterUnused(targetRegister);
+	markRegisterUnused(e1Register);
+	markRegisterUnused(e2Register);
+	return actualResult;
+
+
+
+
 }
 
 string performMul_ResInB1(int iB1Register, int iB2Register)
@@ -331,6 +371,7 @@ string intToString(int theInt)
 	stream << theInt;
 	return stream.str();
 }
+
 
 /*******************************HW5
 /*******************************HW5
