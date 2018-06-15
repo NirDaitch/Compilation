@@ -85,6 +85,7 @@
 	
 	int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
 	string performDiv_ResInB1(int iB1Register, int iB2Register);
+	string performMul_ResInB1(int iB1Register, int iB2Register);
 	string intToString(int theInt);
 	int putNumInRegister(int num_value);
 	
@@ -280,7 +281,6 @@ int putNumInRegister(int num_value)
 
 int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
 {
-	
 	int iB1Register = b1.resultReg;
 	int iB2Register = b2.resultReg;
 
@@ -288,11 +288,27 @@ int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
 	{
 		CodeBuffer::instance().emit(performDiv_ResInB1(iB1Register, iB2Register));
 	}
+	else if (op.compare("*") == 0) {
+		CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+	}
+	else if (op.compare("-") == 0) {
+		//CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+	}
+	else if (op.compare("+") == 0) {
+		//CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+	}
 	
 	markRegisterUnused(iB2Register);
 	
 	return iB1Register;
 	//// result in iB1Register
+}
+
+string performMul_ResInB1(int iB1Register, int iB2Register)
+{
+	string res = "mult\t$" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
+	res += "mflo\t$" + intToString(iB1Register);
+	return res;
 }
 
 string performDiv_ResInB1(int iB1Register, int iB2Register)
