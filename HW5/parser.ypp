@@ -281,7 +281,7 @@ int putNumInRegister(int num_value)
 
 int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
 {
-	int iB1Register = b1.resultReg;
+	//int iB1Register = b1.resultReg;
 	int iB2Register = b2.resultReg;
 
 	if (op.compare("/") == 0)
