@@ -83,10 +83,13 @@
 	void markRegisterUnused(int iRegisterNumber);
 	void markRegisterUsed(int iRegisterNumber);
 	
-	void generateBinopCode(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
-	string putVarInRegister(int iRegisterNumber, string sVarName);
+	int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
+	string performDiv_ResInB1(int iB1Register, int iB2Register);
 	string intToString(int theInt);
+	int putNumInRegister(int num_value);
 	
+	///////////// maybe unneeded or requires change - was written earlier
+	string putVarInRegister(int iRegisterNumber, string sVarName);
 /*******************************HW5
 /*******************************HW5
 /*******************************HW5
@@ -191,12 +194,12 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
 			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);}
 			|	ID				{$$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name; $$.is_array = getIsArray($1.name);}
 			|	Call			{$$.type = $1.type;}
-			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value;}
+			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value;}
 			| 	STRING			{ $$.type = Type_STRING;}
 			|	TRUE			{ $$.type = Type_BOOL;}
 			|	FALSE			{ $$.type = Type_BOOL;}
-			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); generateBinopCode($2.name, $1, $3);}
+			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes($2.name, $1, $3);}
 			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
 			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
 			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
@@ -258,32 +261,52 @@ void markRegisterUsed(int iRegisterNumber)
 	registerPool[iRegisterNumber] = 1;
 }
 
-void generateBinopCode(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
+int putNumInRegister(int num_value)
 {
-	int iB1Register = getFirstAvailableRegister();
-	int iB2Register = getFirstAvailableRegister();
-	int iResultRegister = getFirstAvailableRegister();
-	if (iB1Register == -1 || iB2Register == -1 || iResultRegister == -1) {
+	int registerNum = getFirstAvailableRegister();
+	if (registerNum == -1)
+	{
 		cout << "no available registers!!" << endl;
-		exit(0);
+		exit(0); //// maybe handle this later, exit for now so we won't forget
 	}
-	//cout << "putVarInRegister: " << putVarInRegister(iLeftRegister, lhs.name) << endl;
-	CodeBuffer::instance().emit(putVarInRegister(iB1Register, b1.name));
-	CodeBuffer::instance().emit(putVarInRegister(iB2Register, b2.name));
+	markRegisterUsed(registerNum);
+	///li	$t1, 5	
+	string toEmit = "li\t$" + intToString(registerNum) + ", " + intToString(num_value);
+	
+	CodeBuffer::instance().emit(toEmit);
+	
+	return registerNum;
+}
+
+int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
+{
+	
+	int iB1Register = b1.resultReg;
+	int iB2Register = b2.resultReg;
+
 	if (op.compare("/") == 0)
 	{
-		
+		CodeBuffer::instance().emit(performDiv_ResInB1(iB1Register, iB2Register));
 	}
+	
+	markRegisterUnused(iB2Register);
+	
+	return iB1Register;
+	//// result in iB1Register
+}
+
+string performDiv_ResInB1(int iB1Register, int iB2Register)
+{
+	string res = "div\t$" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
+	res += "mflo\t$" + intToString(iB1Register);
+	return res;
 }
 
 string putVarInRegister(int iRegisterNumber, string sVarName)
 {
 	string sRegisterNumber = intToString(iRegisterNumber);
-	//la	$t0, var1  to load address from RAM
-	string res =  "la\t$" + sRegisterNumber + ", " + sVarName + ";\n";
-	//lw	$t2, ($t0) to load value from address
-	res += "lw\t$" + sRegisterNumber + ", ($" + sRegisterNumber + ");";
-	return res;
+	//lw	$t0, var1  to load word from RAM
+	return "lw\t$" + sRegisterNumber + ", " + sVarName + ";\n";;
 }
 
 string intToString(int theInt)

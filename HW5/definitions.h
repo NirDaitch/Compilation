@@ -25,7 +25,8 @@ class EXP_ATTRIBUTE {
 	std::string name;
     Type type;
     int num_value;
-
+	int resultReg;
+	
     bool is_array;
 	
 	
@@ -33,6 +34,7 @@ class EXP_ATTRIBUTE {
 	{
 		this->name = "";		
 		this->num_value=-1;
+		this->resultReg=-1;
 		this->is_array=false;
 
 	};
