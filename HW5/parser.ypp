@@ -21,6 +21,8 @@
 	int m_iCurrentOffset = 0;
 	vector<string>  TYPES_TO_STRING;
 	
+	int registerPool[26];
+	
 	
 	////////////////CURRENT FUCNTION DATA///////////////
 	int m_iFUNCTION_CurrentOffset = -1;
@@ -66,6 +68,25 @@
 	
 	Type getTypeBinop(Type t1, Type t2);
 	T_Symbol getSymbol(string name);
+	
+	
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5*/	
+	
+	void initRegisterPool();
+	int getFirstAvailableRegister();
+	void markRegisterUnused(int iRegisterNumber);
+	void markRegisterUsed(int iRegisterNumber)
+
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5*/	
+	
 %}
 
 %token VOID INT BYTE RETURN B SC COMMA ID STRING TRUE FALSE
@@ -184,7 +205,7 @@ Exp_boolean	:   Exp {isBoolean($1.type);}
 ScopeStart	:	{start_Scope();}
 			;
 			
-ProgramScopeStart	:	{ program_scope_start();}
+ProgramScopeStart	:	{ initRegisterPool(); program_scope_start(); }
 			;
 			
 ScopeStartFunction	:	{start_scope_function();}
@@ -800,7 +821,47 @@ void checkByteSize(int value, string valueInStringForm)
 	}
 
 }
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5*/
+void initRegisterPool()
+{
+	for(int i=0;i<26;i++)
+		registerPool[i]=0;
+}
 
+int getFirstAvailableRegister()
+{
+	for(int i=8;i<26;i++)
+	{
+		if(registerPool[i]==1)
+		{
+			return i;
+		}
+	}
+	return -1;
+	
+}
+
+void markRegisterUnused(int iRegisterNumber)
+{
+	registerPool[iRegisterNumber] = 0;
+}
+
+void markRegisterUsed(int iRegisterNumber)
+{
+	registerPool[iRegisterNumber] = 1;
+}
+
+
+
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5*/
 
 int main()
 {	TYPES_TO_STRING.push_back("INT");
