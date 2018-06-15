@@ -54,8 +54,8 @@ break 									{								return BREAK;};
 (==|!=) 								{					 			return RELOP_2;};
 (<|>|<=|>=) 							{					 			return RELOP_1;};
 																		
-(\*|\/) 								{					 			return BINOP_1;};
-(\+|-) 									{					 			return BINOP_2;};
+(\*|\/) 								{yylval.name = string(yytext);	return BINOP_1;};
+(\+|-) 									{yylval.name = string(yytext);	return BINOP_2;};
 ([a-zA-Z][a-zA-Z0-9]*) 					{yylval.name = string(yytext); 	return ID;};
 										
 (0|[1-9][0-9]*) 						{yylval.num_value=atoi(yytext); yylval.name=yytext; yylval.type = Type_INT; return NUM;};

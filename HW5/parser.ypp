@@ -4,6 +4,8 @@
 	#include "definitions.h"
 	#include <algorithm>
 	#include "output.hpp"
+	#include "bp.hpp"
+	#include <sstream>
 	#include <stdio.h>
 	#include <map>
 	
@@ -79,8 +81,12 @@
 	void initRegisterPool();
 	int getFirstAvailableRegister();
 	void markRegisterUnused(int iRegisterNumber);
-	void markRegisterUsed(int iRegisterNumber)
-
+	void markRegisterUsed(int iRegisterNumber);
+	
+	void generateBinopCode(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
+	string putVarInRegister(int iRegisterNumber, string sVarName);
+	string intToString(int theInt);
+	
 /*******************************HW5
 /*******************************HW5
 /*******************************HW5
@@ -190,7 +196,7 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
 			| 	STRING			{ $$.type = Type_STRING;}
 			|	TRUE			{ $$.type = Type_BOOL;}
 			|	FALSE			{ $$.type = Type_BOOL;}
-			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
+			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); generateBinopCode($2.name, $1, $3);}
 			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
 			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
 			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
@@ -213,10 +219,86 @@ ScopeStartFunction	:	{start_scope_function();}
 		
 ScopeEnd	:	{end_Scope();}
 			;
-ProgramScopeEnd	:	{end_Scope();}
+ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printCodeBuffer();}
 			;
 
 %%
+
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5*/
+void initRegisterPool()
+{
+	for(int i=0;i<26;i++)
+		registerPool[i]=0;
+}
+
+int getFirstAvailableRegister()
+{
+	for(int i=8;i<26;i++)
+	{
+		if(registerPool[i]==0)
+		{
+			return i;
+		}
+	}
+	return -1;
+	
+}
+
+void markRegisterUnused(int iRegisterNumber)
+{
+	registerPool[iRegisterNumber] = 0;
+}
+
+void markRegisterUsed(int iRegisterNumber)
+{
+	registerPool[iRegisterNumber] = 1;
+}
+
+void generateBinopCode(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
+{
+	int iB1Register = getFirstAvailableRegister();
+	int iB2Register = getFirstAvailableRegister();
+	int iResultRegister = getFirstAvailableRegister();
+	if (iB1Register == -1 || iB2Register == -1 || iResultRegister == -1) {
+		cout << "no available registers!!" << endl;
+		exit(0);
+	}
+	//cout << "putVarInRegister: " << putVarInRegister(iLeftRegister, lhs.name) << endl;
+	CodeBuffer::instance().emit(putVarInRegister(iB1Register, b1.name));
+	CodeBuffer::instance().emit(putVarInRegister(iB2Register, b2.name));
+	if (op.compare("/") == 0)
+	{
+		
+	}
+}
+
+string putVarInRegister(int iRegisterNumber, string sVarName)
+{
+	string sRegisterNumber = intToString(iRegisterNumber);
+	//la	$t0, var1  to load address from RAM
+	string res =  "la\t$" + sRegisterNumber + ", " + sVarName + ";\n";
+	//lw	$t2, ($t0) to load value from address
+	res += "lw\t$" + sRegisterNumber + ", ($" + sRegisterNumber + ");";
+	return res;
+}
+
+string intToString(int theInt)
+{
+	ostringstream stream;
+	stream << theInt;
+	return stream.str();
+}
+
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5
+/*******************************HW5*/
+
 void validateIsArray(string name)
 {
 	if (!getIsArray(name))
@@ -225,7 +307,6 @@ void validateIsArray(string name)
 		exit(0);
 	}
 }
-
 
 void checkRHSNotArray(bool is_array)
 {
@@ -821,47 +902,7 @@ void checkByteSize(int value, string valueInStringForm)
 	}
 
 }
-/*******************************HW5
-/*******************************HW5
-/*******************************HW5
-/*******************************HW5
-/*******************************HW5*/
-void initRegisterPool()
-{
-	for(int i=0;i<26;i++)
-		registerPool[i]=0;
-}
 
-int getFirstAvailableRegister()
-{
-	for(int i=8;i<26;i++)
-	{
-		if(registerPool[i]==1)
-		{
-			return i;
-		}
-	}
-	return -1;
-	
-}
-
-void markRegisterUnused(int iRegisterNumber)
-{
-	registerPool[iRegisterNumber] = 0;
-}
-
-void markRegisterUsed(int iRegisterNumber)
-{
-	registerPool[iRegisterNumber] = 1;
-}
-
-
-
-/*******************************HW5
-/*******************************HW5
-/*******************************HW5
-/*******************************HW5
-/*******************************HW5*/
 
 int main()
 {	TYPES_TO_STRING.push_back("INT");
