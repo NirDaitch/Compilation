@@ -29,10 +29,10 @@ class EXP_ATTRIBUTE {
 	int resultReg;
     bool is_array;
 	
-	std::vector<int> trueList;
-	std::vector<int> falseList;
-	std::vector<int> nextList;
-	
+	vector<int> trueList;
+	vector<int> falseList;
+	vector<int> nextList;
+	string nextInstr;
 	
 	EXP_ATTRIBUTE() 
 	{
@@ -43,6 +43,7 @@ class EXP_ATTRIBUTE {
 		this->trueList = std::vector<int>();
 		this->falseList = std::vector<int>();
 		this->nextList = std::vector<int>();
+		this->nextInstr="";
 	};
 	~EXP_ATTRIBUTE(){};
 };

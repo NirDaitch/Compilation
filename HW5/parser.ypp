@@ -86,6 +86,8 @@
 	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
 	int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType);
 	void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op);
+	void performAnd(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2);
+	void performOr(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2);
 	string performRelop(int reg1, int reg2, string op);
 	
 	string performDiv_ResInB1(int iB1Register, int iB2Register);
@@ -96,7 +98,7 @@
 	string performSubByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
 	string intToString(int theInt);
 	int putNumInRegister(int num_value);
-	
+	void generateMMarker(EXP_ATTRIBUTE& leftExp);
 	///////////// maybe unneeded or requires change - was written earlier
 	string putVarInRegister(int iRegisterNumber, string sVarName);
 /*******************************HW5
@@ -206,12 +208,12 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	STRING			{ $$.type = Type_STRING;}
-			|	TRUE			{ $$.type = Type_BOOL; $$.trueList = CodeBuffer::makelist(CodeBuffer::instance().emit("j "));}
-			|	FALSE			{ $$.type = Type_BOOL; $$.falseList = CodeBuffer::makelist(CodeBuffer::instance().emit("j "));}
+			|	TRUE			{ $$.type = Type_BOOL; $$.trueList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
+			|	FALSE			{ $$.type = Type_BOOL; $$.falseList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
 			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes1($2.name, $1, $3);}
 			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes2($2.name, $1, $3, $$.type);}
-			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
-			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
+			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;performAnd($$,$1,$3);}
+			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;performOr($$,$1,$3);}
 			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $2.resultReg, $2.name);}
 			| 	Exp RELOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $2.resultReg, $2.name);}
 			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL; $$.trueList = $2.falseList; $$.falseList = $2.trueList;}
@@ -233,6 +235,9 @@ ScopeEnd	:	{end_Scope();}
 			;
 ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printCodeBuffer();}
 			;
+
+mMarker		: {generateMMarker($$);}
+			; 
 
 %%
 
@@ -317,7 +322,15 @@ void markRegisterUsed(int iRegisterNumber)
 {
 	registerPool[iRegisterNumber] = 1;
 }
+void performAnd(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2)
+{
 
+
+}
+void performOr(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2)
+{
+
+}
 int putNumInRegister(int num_value)
 {
 	int registerNum = getFirstAvailableRegister();
@@ -449,7 +462,16 @@ string intToString(int theInt)
 	stream << theInt;
 	return stream.str();
 }
+void generateMMarker(EXP_ATTRIBUTE& leftExp)
+{
+	string nextInstr=CodeBuffer::instance().genLabel();
+	leftExp.nextInstr=nextInstr;
 
+
+
+
+
+}
 /*******************************HW5
 /*******************************HW5
 /*******************************HW5
