@@ -89,6 +89,8 @@
 	string performMul_ResInB1(int iB1Register, int iB2Register);
 	string performAddByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
 	string performAddInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
+	string performSubInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
+	string performSubByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
 	string intToString(int theInt);
 	int putNumInRegister(int num_value);
 	
@@ -294,10 +296,19 @@ int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resTyp
 		exit(0); //// maybe handle this later, exit for now so we won't forget
 	}
 	
-	if 		(op.compare("-") == 0) {
-		//CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+	if 		(op.compare("-") == 0) 
+	{
+		if (resType == Type_INT)
+		{
+			CodeBuffer::instance().emit(performSubInt_ResInResRegister(iB1Register, iB2Register, resRegister));
+		}
+		else
+		{
+			CodeBuffer::instance().emit(performSubByte_ResInResRegister(iB1Register, iB2Register, resRegister));
+		}
 	}
-	else if (op.compare("+") == 0) {
+	else if (op.compare("+") == 0) 
+	{
 		if (resType == Type_INT)
 		{
 			CodeBuffer::instance().emit(performAddInt_ResInResRegister(iB1Register, iB2Register, resRegister));
@@ -313,6 +324,18 @@ int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resTyp
 	//// could be optimized to use B1 again as result register
 	
 	return resRegister;
+}
+
+string performSubByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
+{
+	//addu	$t1,$t6,$t7
+	return "subu\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + ";";
+}
+
+string performSubInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
+{
+	//addu	$t1,$t6,$t7
+	return "sub\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + ";";
 }
 
 string performAddInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
