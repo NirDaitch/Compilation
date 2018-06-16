@@ -51,8 +51,8 @@ break 									{								return BREAK;};
 \] 										{								return RBRACK;};
 \= 										{								return ASSIGN;};
 																
-(==|!=) 								{					 			return RELOP_2;};
-(<|>|<=|>=) 							{					 			return RELOP_1;};
+(==|!=) 								{yylval.name = string(yytext);	return RELOP_2;};
+(<|>|<=|>=) 							{yylval.name = string(yytext);	return RELOP_1;};
 																		
 (\*|\/) 								{yylval.name = string(yytext);	return BINOP_1;};
 (\+|-) 									{yylval.name = string(yytext);	return BINOP_2;};

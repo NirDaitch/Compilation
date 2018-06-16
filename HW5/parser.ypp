@@ -85,6 +85,9 @@
 	
 	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
 	int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType);
+	void createRelop(EXP_ATTRIBUTE leftExp, int resultReg1, int resultReg2, string op);
+	string performRelop(int reg1, int reg2, string op);
+	
 	string performDiv_ResInB1(int iB1Register, int iB2Register);
 	string performMul_ResInB1(int iB1Register, int iB2Register);
 	string performAddByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
@@ -196,22 +199,22 @@ Type		:	INT		{ $$.type = Type_INT;}
 			|	BOOL	{ $$.type = Type_BOOL;};
 
 			
-Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
+Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseList = $2.falseList;}
 			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);}
 			|	ID				{ $$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name; $$.is_array = getIsArray($1.name);}
 			|	Call			{ $$.type = $1.type;}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	STRING			{ $$.type = Type_STRING;}
-			|	TRUE			{ $$.type = Type_BOOL;}
-			|	FALSE			{ $$.type = Type_BOOL;}
+			|	TRUE			{ $$.type = Type_BOOL; $$.trueList = CodeBuffer::makelist(CodeBuffer::instance().emit("j "));}
+			|	FALSE			{ $$.type = Type_BOOL; $$.falseList = CodeBuffer::makelist(CodeBuffer::instance().emit("j "));}
 			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes1($2.name, $1, $3);}
 			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes2($2.name, $1, $3, $$.type);}
 			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
 			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
-			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
-			| 	Exp RELOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
-			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL;}
+			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $2.resultReg, $2.name);}
+			| 	Exp RELOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $2.resultReg, $2.name);}
+			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL; $$.trueList = $2.falseList; $$.falseList = $2.trueList;}
 			;
 
 Exp_boolean	:   Exp {isBoolean($1.type);}
@@ -238,6 +241,54 @@ ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printCodeBuffer();}
 /*******************************HW5
 /*******************************HW5
 /*******************************HW5*/
+void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op)
+{
+	string sIfStatement = performRelop(reg1, reg2, op);
+	int iNextInstruction1 = CodeBuffer::instance().emit(sIfStatement);
+	leftExp.trueList = CodeBuffer::makelist(iNextInstruction1);
+	
+	int iNextInstruction2 = CodeBuffer::instance().emit("b ");
+	leftExp.falseList = CodeBuffer::makelist(iNextInstruction2);
+}
+
+string performRelop(int reg1, int reg2, string op)
+{
+	string res = "";
+	if (op.compare("==") == 0)
+	{
+		// beq	$t0,$t1,target	#  branch to target if  $t0 = $t1
+		res += "beq\t";
+	}
+	else if (op.compare("!=") == 0)
+	{
+		// bne	$t0,$t1,target	#  branch to target if  $t0 <> $t1
+		res += "bne\t";
+	}
+	else if (op.compare("<") == 0)
+	{
+		// blt	$t0,$t1,target	#  branch to target if  $t0 < $t1
+		res += "blt\t";
+	}
+	else if (op.compare("<=") == 0)
+	{
+		// ble	$t0,$t1,target	#  branch to target if  $t0 <= $t1
+		res += "ble\t";
+	}
+	else if (op.compare(">") == 0)
+	{
+		// bgt	$t0,$t1,target	#  branch to target if  $t0 > $t1
+		res += "bgt\t";
+	}
+	else if (op.compare(">=") == 0)
+	{
+		// bge	$t0,$t1,target	#  branch to target if  $t0 >= $t1
+		res += "bge\t";
+	}
+	
+	res += "$" + intToString(reg1) + ", $" + intToString(reg2) + ", "; /// there's a blank here for the label inserted when backpatching
+	return res;
+}
+
 void initRegisterPool()
 {
 	for(int i=0;i<26;i++)
