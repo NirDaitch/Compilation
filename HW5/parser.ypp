@@ -83,9 +83,12 @@
 	void markRegisterUnused(int iRegisterNumber);
 	void markRegisterUsed(int iRegisterNumber);
 	
-	int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
+	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
+	int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType);
 	string performDiv_ResInB1(int iB1Register, int iB2Register);
 	string performMul_ResInB1(int iB1Register, int iB2Register);
+	string performAddByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
+	string performAddInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
 	string intToString(int theInt);
 	int putNumInRegister(int num_value);
 	
@@ -193,15 +196,15 @@ Type		:	INT		{ $$.type = Type_INT;}
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type;}
 			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);}
-			|	ID				{$$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name; $$.is_array = getIsArray($1.name);}
-			|	Call			{$$.type = $1.type;}
+			|	ID				{ $$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name; $$.is_array = getIsArray($1.name);}
+			|	Call			{ $$.type = $1.type;}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
-			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value;}
+			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	STRING			{ $$.type = Type_STRING;}
 			|	TRUE			{ $$.type = Type_BOOL;}
 			|	FALSE			{ $$.type = Type_BOOL;}
-			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes($2.name, $1, $3);}
-			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type);}
+			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes1($2.name, $1, $3);}
+			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes2($2.name, $1, $3, $$.type);}
 			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
 			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;}
 			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL;}
@@ -279,7 +282,53 @@ int putNumInRegister(int num_value)
 	return registerNum;
 }
 
-int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
+int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType)
+{
+	int iB1Register = b1.resultReg;
+	int iB2Register = b2.resultReg;
+	
+	int resRegister = getFirstAvailableRegister();
+	if (resRegister == -1)
+	{
+		cout << "no available registers!!" << endl;
+		exit(0); //// maybe handle this later, exit for now so we won't forget
+	}
+	
+	if 		(op.compare("-") == 0) {
+		//CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+	}
+	else if (op.compare("+") == 0) {
+		if (resType == Type_INT)
+		{
+			CodeBuffer::instance().emit(performAddInt_ResInResRegister(iB1Register, iB2Register, resRegister));
+		}
+		else
+		{
+			CodeBuffer::instance().emit(performAddByte_ResInResRegister(iB1Register, iB2Register, resRegister));
+		}
+	}
+	
+	markRegisterUnused(iB1Register);
+	markRegisterUnused(iB2Register);
+	//// could be optimized to use B1 again as result register
+	
+	return resRegister;
+}
+
+string performAddInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
+{
+	//addu	$t1,$t6,$t7
+	return "add\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + ";";
+}
+
+string performAddByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
+{
+	//addu	$t1,$t6,$t7
+	return "addu\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + ";";
+}
+
+
+int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
 {
 	int iB1Register = b1.resultReg;
 	int iB2Register = b2.resultReg;
@@ -291,12 +340,6 @@ int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
 	else if (op.compare("*") == 0) {
 		CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
 	}
-	else if (op.compare("-") == 0) {
-		//CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
-	}
-	else if (op.compare("+") == 0) {
-		//CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
-	}
 	
 	markRegisterUnused(iB2Register);
 	
@@ -306,6 +349,7 @@ int generateBinopRes(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
 
 string performMul_ResInB1(int iB1Register, int iB2Register)
 {
+	//// TODO: check if result is bigger than 32bit, if yes then mult result is also in mfhi
 	string res = "mult\t$" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
 	res += "mflo\t$" + intToString(iB1Register);
 	return res;
