@@ -85,7 +85,7 @@
 	
 	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
 	int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType);
-	void createRelop(EXP_ATTRIBUTE leftExp, int resultReg1, int resultReg2, string op);
+	void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op);
 	string performRelop(int reg1, int reg2, string op);
 	
 	string performDiv_ResInB1(int iB1Register, int iB2Register);

@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include <vector>
 
 #define YYSTYPE EXP_ATTRIBUTE
 
