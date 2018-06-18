@@ -33,7 +33,7 @@ class EXP_ATTRIBUTE {
 	vector<int> falseList;
 	vector<int> nextList;
 	string nextInstr;
-	
+	int sizeForStack;
 	EXP_ATTRIBUTE() 
 	{
 		this->name = "";		
@@ -44,6 +44,7 @@ class EXP_ATTRIBUTE {
 		this->falseList = std::vector<int>();
 		this->nextList = std::vector<int>();
 		this->nextInstr="";
+		this->sizeForStack=0;
 	};
 	~EXP_ATTRIBUTE(){};
 };

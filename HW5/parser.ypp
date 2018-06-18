@@ -166,11 +166,12 @@ RetType		:	Type {$$.type=$1.type;}
 			| 	VOID {$$.type=Type_VOID;}
 			;
 
-Formals		:	FormalsList
+Formals		:	FormalsList {$$.sizeForStack = $1.sizeForStack;}
 			|	;
 
-FormalsList	:	FormalDecl
-			|	FormalDecl	COMMA	FormalsList;
+FormalsList	:	FormalDecl {$$.sizeForStack = 1;}
+			|	FormalDecl	COMMA	FormalsList {$$.sizeForStack = $3.sizeForStack+1;}
+			;
 				
 FormalDecl	:	Type	ID { funcArgs.push_back(createFunctionSymbol($2.name, $1.type, -1));}
 			|	Type	ID	LBRACK	NUM	RBRACK { validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
@@ -206,8 +207,8 @@ endWhile	: {m_iWhileCounter--;};
 Call 		:	ID LPAREN ExpList RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();}
 			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();};
 				
-ExpList 	:	Exp {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);}
-			|	Exp COMMA ExpList {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);};
+ExpList 	:	Exp {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);$$.sizeForStack =1;}
+			|	Exp COMMA ExpList {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);$$.sizeForStack = $3.sizeForStack+1;};
 			
 Type		:	INT		{ $$.type = Type_INT;}
 			|	BYTE	{ $$.type = Type_BYTE;}
@@ -1065,6 +1066,7 @@ void end_Scope()
 	ostringstream ss;
 	ss << VAR_SIZE* variablesCounter;
 	//popping the scope stack:
+
 	CodeBuffer::instance().emit("add\t$sp, $sp, " + ss.str()) + "\n";	
 	m_stScopeStack.pop_front();
 }
