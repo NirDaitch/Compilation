@@ -249,8 +249,7 @@ ScopeEnd	:	{end_Scope();}
 ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printCodeBuffer();}
 			;
 
-mMarker		: {generateMMarker($$);}
-			; 
+
 
 %%
 
@@ -488,18 +487,17 @@ void saveAllRegisters()
 	for(int i=8;i<=25;i++)
 	{
 		ostringstream ss;
-		ss<< i*VAL_SIZE;
-		CodeBuffer::instance().emit("sw\t" +"$"+ i +", " + ss.str()+  "($sp)\n");
+		ss<< i*VAR_SIZE;
+		CodeBuffer::instance().emit("sw\t$"  + intToString(i) +", " + ss.str()+  "($sp)\n");
 	}
-
-	//TODO: WE CAN MARK ALL AS UNUSED AFTER STORING, and we can store the current used state (which are used and not), and restore it when 'loadallregisters'
+	
 }
 void loadAllRegisters()
 {
 	for(int i=8;i<=25;i++)
 	{
 		ostringstream ss;
-		ss<< i*VAL_SIZE;
+		ss<< i*VAR_SIZE;
 		CodeBuffer::instance().emit("lw\t"+ "$" + i + "," +ss.str()+  "($sp)\n");
 	}
 	CodeBuffer::instance().emit("addi $sp , $sp,72\n");
@@ -507,7 +505,7 @@ void loadAllRegisters()
 void storeValInStack(string variable, int iRegisterNumber)
 {
 	//int posOfVar = symbolTable.getPosition(varName); TODO!!!
-	int offsetFromFP = -posOfVar*VAL_SIZE;
+	int offsetFromFP = -posOfVar*VAR_SIZE;
 	ostringstream ss;
 	ss << offsetFromFP;
 	CodeBuffer::instance().emit("sw\t" + "$"+intToString(iRegisterNumber) + ", " +ss.str()+"($fp)\n");
@@ -516,7 +514,7 @@ void storeValInStack(string variable, int iRegisterNumber)
 int loadValFromStack(string variable)
 {
 	int posOfVar = symbolTable.getPosition(varName);// TODO!!!
-	int offsetFromFP = -posOfVar*VAL_SIZE;
+	int offsetFromFP = -posOfVar*VAR_SIZE;
 	int iDestRegister = getFirstAvailableRegister();
 	ostringstream ss;
 	ss << offsetFromFP;
@@ -550,7 +548,7 @@ void initializeStackFP()
 }
 void storeValListInStack( vector<int> values)
 {
-	int offset = values.size()*VAL_SIZE; //TODO- make sure values.size is correct
+	int offset = values.size()*VAR_SIZE; //TODO- make sure values.size is correct
 	ostringstream ss;
 	ss << offset;
 	CodeBuffer::instance().emit("add $sp , $sp , -"+ ss.str() +"\n");
@@ -558,7 +556,7 @@ void storeValListInStack( vector<int> values)
 	for(int i =0;i<values.size();i++)
 	{
 		ostringstream ss;
-		ss << VAL_SIZE*i;
+		ss << VAR_SIZE*i;
 		CodeBuffer::instance().emit("sw\t$" +intToString(values[values.size() - i -1]) +", " + ss.str() +"($sp)\n");
 		markRegisterUnused(values[values.size() - i -1]);
 	}
@@ -566,7 +564,7 @@ void storeValListInStack( vector<int> values)
 }
 void storeFuncRetAddrInStack(int numOfArgs)
 {	
-	int offset = (numOfArgs)*VAL_SIZE;
+	int offset = (numOfArgs)*VAR_SIZE;
 	ostringstream sstr;
 	sstr << offset;
 	CodeBuffer::instance().emit("sw\t$ra , "+ sstr.str()+"($sp)");
@@ -1018,6 +1016,7 @@ void start_scope_function()
 
 void end_Scope()
 {
+	int variablesCounter=0;
 	SymbolTable& top = m_stScopeStack.front();
 	endScope();
 	if (top.lstSymbols.size() > 0) {
