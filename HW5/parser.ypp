@@ -1040,7 +1040,7 @@ void end_Scope()
 
 				if (curr.Type_ARRAY_SIZE != -1)
 				{
-
+					variablesCounter+=curr.Type_ARRAY_SIZE;//TODO:make sure its the correct size
 					string sArrayType = makeArrayType(TYPES_TO_STRING[curr.type], curr.Type_ARRAY_SIZE);
 					printID(curr.name, curr.offset, sArrayType);
 					//cout <<"curr name: "<<curr.name<< "curr offset: " << m_iCurrentOffset << "calling -arraysize"<< endl;
@@ -1051,10 +1051,10 @@ void end_Scope()
 				else
 				{
 					printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
+					variablesCounter++;
 					//cout <<"curr name: "<<curr.name<< "curr offset: " << m_iCurrentOffset << "calling --" <<endl;
 					if(curr.offset>=0)
-						m_iCurrentOffset--;
-					
+						m_iCurrentOffset--;				
 					
 				}
 
@@ -1062,7 +1062,10 @@ void end_Scope()
 			}
 		}
 	}
-	
+	ostringstream ss;
+	ss << VAR_SIZE* variablesCounter;
+	//popping the scope stack:
+	CodeBuffer::instance().emit("add\t$sp, $sp, " + ss.str()) + "\n";	
 	m_stScopeStack.pop_front();
 }
 
