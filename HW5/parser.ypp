@@ -498,7 +498,7 @@ void loadAllRegisters()
 	{
 		ostringstream ss;
 		ss<< i*VAR_SIZE;
-		CodeBuffer::instance().emit("lw\t"+ "$" + i + "," +ss.str()+  "($sp)\n");
+		CodeBuffer::instance().emit("lw\t$" + intToString(i) + "," +ss.str()+  "($sp)\n");
 	}
 	CodeBuffer::instance().emit("addi $sp , $sp,72\n");
 }
