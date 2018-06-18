@@ -86,6 +86,7 @@
 	void markRegisterUsed(int iRegisterNumber);
 	void saveAllRegisters();
 	void loadAllRegisters();
+	int getOffset(string name);
 	void storeValInStack(string variable, int iRegisterNumber);	
 	int loadValFromStack(string variable);
 	void addPrintHelper();
@@ -447,7 +448,16 @@ int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
 	return iB1Register;
 	//// result in iB1Register
 }
-
+int getOffset(string name)
+{
+	T_Symbol symb=getSymbol(name);
+	if(symb.type == __Type_INVALID )
+	{
+		errorUndef(yylineno, name);
+		exit(0);
+	}
+	return symb.offset;
+}
 string performMul_ResInB1(int iB1Register, int iB2Register)
 {
 	//// TODO: check if result is bigger than 32bit, if yes then mult result is also in mfhi
@@ -506,8 +516,7 @@ void loadAllRegisters()
 }
 void storeValInStack(string variable, int iRegisterNumber)
 {
-	int posOfVar=0;//TODO!@#!@#
-	//int posOfVar = symbolTable.getPosition(varName); TODO!!!
+	int posOfVar=getOffset(variable);	//TODO- make sure its correct
 	int offsetFromFP = -posOfVar*VAR_SIZE;
 	ostringstream ss;
 	ss << offsetFromFP;
@@ -516,8 +525,7 @@ void storeValInStack(string variable, int iRegisterNumber)
 }
 int loadValFromStack(string variable)
 {
-	int posOfVar=0;//TODO!!
-	//int posOfVar = symbolTable.getPosition(varName);// TODO!!!
+	int posOfVar=getOffset(variable);	//TODO- make sure its correct
 	int offsetFromFP = -posOfVar*VAR_SIZE;
 	int iDestRegister = getFirstAvailableRegister();
 	ostringstream ss;
