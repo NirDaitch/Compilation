@@ -520,7 +520,7 @@ int loadValFromStack(string variable)
 	int iDestRegister = getFirstAvailableRegister();
 	ostringstream ss;
 	ss << offsetFromFP;
-	CodeBuffer::instance().emit("lw\t" + "$" + intToString(iDestRegister) + ", " +ss.str()+"($fp)\n");
+	CodeBuffer::instance().emit("lw\t$" + intToString(iDestRegister) + ", " +ss.str()+"($fp)\n");
 	return iDestRegister;
 }
 void addPrintHelper()
