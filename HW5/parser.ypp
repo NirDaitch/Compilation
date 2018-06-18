@@ -593,7 +593,7 @@ void addPrintiFunc()
 void beforeFuncCall()
 {
 	//save mr register:
-	saveAllRegisters()l
+	saveAllRegisters();
 	//move sp down to add a slot for the return address and FP
 	CodeBuffer::instance().emit("addi\t$sp, $sp, -8\n");
 	//put the return address on the stack in that spot we just allocated
