@@ -95,7 +95,7 @@
 	void initializeStackFP();
 	void addPrintFunc();
 	void addPrintiFunc();
-
+	void beforeFuncCall();
 	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
 	int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType);
 	void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op);
@@ -589,6 +589,17 @@ void addPrintiFunc()
 	addPrintiHelper();
 	loadAllRegisters();
 	CodeBuffer::instance().emit("jr\t$ra\n");
+}
+void beforeFuncCall()
+{
+	//save mr register:
+	saveAllRegisters()l
+	//move sp down to add a slot for the return address and FP
+	CodeBuffer::instance().emit("addi\t$sp, $sp, -8\n");
+	//put the return address on the stack in that spot we just allocated
+	CodeBuffer::instance().emit("sw\t$fp, 4($sp)\n");
+	//todo- check if its working
+	return;
 }
 
 /*******************************HW5
