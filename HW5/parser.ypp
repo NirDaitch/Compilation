@@ -1179,12 +1179,18 @@ void createAndPushSymbol(string name, Type type, int size)
 	symbol.offset = m_iCurrentOffset++;
 	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
 
+	//adding slot for it in the stack
+	CodeBuffer::instance().emit("addi\t$sp, $sp, -4\n");
+
 
 	if(size>-1)//its an array!
 	{
 		//cout <<"curr name: "<<symbol.name<< "curr offset: " << m_iCurrentOffset << "calling +arraysize"<< endl;
 		symbol.Type_ARRAY_SIZE=size;		
 		m_iCurrentOffset+=size-1;
+
+		//adding additional slots for the array elements on the stack
+		CodeBuffer::instance().emit("addi\t$sp, $sp, -" + intToString(size-1)+ "\n");
 	}
 
 	m_stScopeStack.front().addSymbol(symbol);
