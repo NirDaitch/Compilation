@@ -504,16 +504,18 @@ void loadAllRegisters()
 }
 void storeValInStack(string variable, int iRegisterNumber)
 {
+	int posOfVar=0;//TODO!@#!@#
 	//int posOfVar = symbolTable.getPosition(varName); TODO!!!
 	int offsetFromFP = -posOfVar*VAR_SIZE;
 	ostringstream ss;
 	ss << offsetFromFP;
-	CodeBuffer::instance().emit("sw\t" + "$"+intToString(iRegisterNumber) + ", " +ss.str()+"($fp)\n");
+	CodeBuffer::instance().emit("sw\t$" + intToString(iRegisterNumber) + ", " +ss.str()+"($fp)\n");
 	markRegisterUnused(iRegisterNumber);
 }
 int loadValFromStack(string variable)
 {
-	int posOfVar = symbolTable.getPosition(varName);// TODO!!!
+	int posOfVar=0;//TODO!!
+	//int posOfVar = symbolTable.getPosition(varName);// TODO!!!
 	int offsetFromFP = -posOfVar*VAR_SIZE;
 	int iDestRegister = getFirstAvailableRegister();
 	ostringstream ss;
