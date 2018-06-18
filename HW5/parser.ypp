@@ -9,6 +9,8 @@
 	#include <stdio.h>
 	#include <map>
 	
+
+	#define VAR_SIZE 4
 	using namespace std;
 	using namespace output;
 
@@ -82,7 +84,18 @@
 	int getFirstAvailableRegister();
 	void markRegisterUnused(int iRegisterNumber);
 	void markRegisterUsed(int iRegisterNumber);
-	
+	void saveAllRegisters();
+	void loadAllRegisters();
+	void storeValInStack(string variable, int iRegisterNumber);	
+	int loadValFromStack(string variable);
+	void addPrintHelper();
+	void addPrintiHelper();
+	void storeFuncRetAddrInStack(int numOfArgs);
+	void storeValListInStack( vector<int> values);
+	void initializeStackFP();
+	void addPrintFunc();
+	void addPrintiFunc();
+
 	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
 	int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType);
 	void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op);
@@ -466,12 +479,118 @@ void generateMMarker(EXP_ATTRIBUTE& leftExp)
 {
 	string nextInstr=CodeBuffer::instance().genLabel();
 	leftExp.nextInstr=nextInstr;
+	//todo
+}
+void saveAllRegisters()
+{
+	CodeBuffer::instance().emit("addi $sp , $sp,-72\n");
 
+	for(int i=8;i<=25;i++)
+	{
+		ostringstream ss;
+		ss<< i*VAL_SIZE;
+		CodeBuffer::instance().emit("sw\t" +"$"+ i +", " + ss.str()+  "($sp)\n");
+	}
 
+	//TODO: WE CAN MARK ALL AS UNUSED AFTER STORING, and we can store the current used state (which are used and not), and restore it when 'loadallregisters'
+}
+void loadAllRegisters()
+{
+	for(int i=8;i<=25;i++)
+	{
+		ostringstream ss;
+		ss<< i*VAL_SIZE;
+		CodeBuffer::instance().emit("lw\t"+ "$" + i + "," +ss.str()+  "($sp)\n");
+	}
+	CodeBuffer::instance().emit("addi $sp , $sp,72\n");
+}
+void storeValInStack(string variable, int iRegisterNumber)
+{
+	//int posOfVar = symbolTable.getPosition(varName); TODO!!!
+	int offsetFromFP = -posOfVar*VAL_SIZE;
+	ostringstream ss;
+	ss << offsetFromFP;
+	CodeBuffer::instance().emit("sw\t" + "$"+intToString(iRegisterNumber) + ", " +ss.str()+"($fp)\n");
+	markRegisterUnused(iRegisterNumber);
+}
+int loadValFromStack(string variable)
+{
+	int posOfVar = symbolTable.getPosition(varName);// TODO!!!
+	int offsetFromFP = -posOfVar*VAL_SIZE;
+	int iDestRegister = getFirstAvailableRegister();
+	ostringstream ss;
+	ss << offsetFromFP;
+	CodeBuffer::instance().emit("lw\t" + "$" + intToString(iDestRegister) + ", " +ss.str()+"($fp)\n");
+	return iDestRegister;
+}
+void addPrintHelper()
+{
+	CodeBuffer::instance().emit("lw\t$a0,0($sp)\n");
+	CodeBuffer::instance().emit("li\t$v0,4\n");
+	CodeBuffer::instance().emit("syscall\n");
+	CodeBuffer::instance().emit("add\t$sp, $fp, 8\n");
+	CodeBuffer::instance().emit("lw\t$ra, 0($sp)\n");
+	CodeBuffer::instance().emit("lw\t$fp, 4($sp)\n");
+	CodeBuffer::instance().emit("add\t$sp, $sp, 8\n");
+}
+void addPrintiHelper()
+{
+	CodeBuffer::instance().emit("lw\t$a0,0($sp)\n");
+	CodeBuffer::instance().emit("li\t$v0,1\n");
+	CodeBuffer::instance().emit("syscall\n");
+	CodeBuffer::instance().emit("add\t$sp, $fp, 8\n");
+	CodeBuffer::instance().emit("lw\t$ra, 0($sp)\n");
+	CodeBuffer::instance().emit("lw\t$fp, 4($sp)\n");
+	CodeBuffer::instance().emit("add\t$sp, $sp, 8\n");
+}
 
+void initializeStackFP()
+{
+	CodeBuffer::instance().emit("addi $fp, $sp, -4\n");
+}
+void storeValListInStack( vector<int> values)
+{
+	int offset = values.size()*VAL_SIZE; //TODO- make sure values.size is correct
+	ostringstream ss;
+	ss << offset;
+	CodeBuffer::instance().emit("add $sp , $sp , -"+ ss.str() +"\n");
 
+	for(int i =0;i<values.size();i++)
+	{
+		ostringstream ss;
+		ss << VAL_SIZE*i;
+		CodeBuffer::instance().emit("sw\t$" +intToString(values[values.size() - i -1]) +", " + ss.str() +"($sp)\n");
+		markRegisterUnused(values[values.size() - i -1]);
+	}
 
 }
+void storeFuncRetAddrInStack(int numOfArgs)
+{	
+	int offset = (numOfArgs)*VAL_SIZE;
+	ostringstream sstr;
+	sstr << offset;
+	CodeBuffer::instance().emit("sw\t$ra , "+ sstr.str()+"($sp)");
+	//TODO: find out numOfArgs
+}
+void addPrintFunc(){
+	//TODO: use this and addprinti when starting the program
+	CodeBuffer::instance().emit("print:");
+	initializeStackFP();
+	storeFuncRetAddrInStack(1);
+	addPrintHelper();
+	loadAllRegisters();
+	CodeBuffer::instance().emit("jr\t$ra\n");
+}
+void addPrintiFunc()
+{	
+	CodeBuffer::instance().emit("printi:");
+	initializeStackFP();
+	storeFuncRetAddrInStack(1);
+	addPrintiHelper();
+	loadAllRegisters();
+	CodeBuffer::instance().emit("jr\t$ra\n");
+}
+
 /*******************************HW5
 /*******************************HW5
 /*******************************HW5
