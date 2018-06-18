@@ -96,6 +96,7 @@
 	void addPrintFunc();
 	void addPrintiFunc();
 	void beforeFuncCall();
+	void popStackAfterFunction (int size);
 	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
 	int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType);
 	void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op);
@@ -157,7 +158,7 @@ Program		:	ProgramScopeStart Funcs {checkHasMain();} ProgramScopeEnd ;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements RBRACE ScopeEnd
+FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements RBRACE ScopeEnd {popStackAfterFunction($5.sizeForStack);}
 			;
 
 FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();};	
@@ -406,25 +407,25 @@ int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resTyp
 string performSubByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
 {
 	//addu	$t1,$t6,$t7
-	return "subu\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + ";";
+	return "subu\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
 }
 
 string performSubInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
 {
 	//addu	$t1,$t6,$t7
-	return "sub\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + ";";
+	return "sub\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
 }
 
 string performAddInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
 {
 	//addu	$t1,$t6,$t7
-	return "add\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + ";";
+	return "add\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
 }
 
 string performAddByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
 {
 	//addu	$t1,$t6,$t7
-	return "addu\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + ";";
+	return "addu\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
 }
 
 
@@ -601,6 +602,16 @@ void beforeFuncCall()
 	CodeBuffer::instance().emit("sw\t$fp, 4($sp)\n");
 	//todo- check if its working
 	return;
+}
+void popStackAfterFunction (int size)
+{	
+	ostringstream ss;
+	ss << VAR_SIZE*(size+1);
+	CodeBuffer::instance().emit("addi\t$sp, $fp, " + ss.str()+"\n");
+	CodeBuffer::instance().emit("lw\t$ra, 0($sp)\n");
+	CodeBuffer::instance().emit("lw\t$fp, 4($sp)\n");
+	CodeBuffer::instance().emit("addi\t$sp, $sp, 8\n");
+	loadAllRegisters();
 }
 
 /*******************************HW5
