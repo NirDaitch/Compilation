@@ -96,6 +96,7 @@
 	void initializeStackFP();
 	void addPrintFunc();
 	void addPrintiFunc();
+	void bpIF2Statement(EXP_ATTRIBUTE S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTRIBUTE M2, EXP_ATTRIBUTE S1, EXP_ATTRIBUTE N, EXP_ATTRIBUTE S2);
 	void beforeFuncCall();
 	void popStackAfterFunction (int size);
 	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
@@ -185,7 +186,7 @@ Statements	:	Statement
 			|	Statements	 Statement
 			;
 
-Statement	:	LBRACE	ScopeStart	Statements 	RBRACE ScopeEnd
+Statement	:	LBRACE	ScopeStart	Statements RBRACE {$$.nextList=$3.nextList;} ScopeEnd
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
@@ -195,9 +196,9 @@ Statement	:	LBRACE	ScopeStart	Statements 	RBRACE ScopeEnd
 			|	Call SC
 			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);}
-			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd
-			|   IF LPAREN  Exp_boolean RPAREN ScopeStart  Statement ScopeEnd  ELSE ScopeStart Statement ScopeEnd
-			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);} ScopeStart Statement ScopeEnd endWhile
+			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} ScopeEnd
+			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd N ELSE ScopeStart M Statement {bpIF2Statement($$,$3,$6,$12,$7,$9,$13);} ScopeEnd
+			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);/*TODO WHILE BP*/} ScopeStart Statement ScopeEnd endWhile
 			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}}
 			;
 			
@@ -634,7 +635,13 @@ void popStackAfterFunction (int size)
 	CodeBuffer::instance().emit("addi\t$sp, $sp, 8\n");
 	loadAllRegisters();
 }
-
+void bpIF2Statement(EXP_ATTRIBUTE S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTRIBUTE M2, EXP_ATTRIBUTE S1, EXP_ATTRIBUTE N, EXP_ATTRIBUTE S2)
+{
+	CodeBuffer::instance().bpatch(B.trueList,M1.instr);
+	CodeBuffer::instance().bpatch(B.falseList,M2.instr);
+	vector<int> temp= CodeBuffer::instance().merge(S1.nextList,N.nextList);
+	S.nextList=merge(temp,S2.nextList);	
+}
 /*******************************HW5
 /*******************************HW5
 /*******************************HW5
