@@ -196,14 +196,12 @@ Statement	:	LBRACE	ScopeStart	Statements RBRACE {$$.nextList=$3.nextList;} Scope
 			|	Call SC
 			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);}
-			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} ScopeEnd
+			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} 
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement {bpIF2Statement($$,$3,$6,$12,$7,$11,$13);} ScopeEnd
 			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);/*TODO WHILE BP*/} ScopeStart Statement ScopeEnd endWhile
 			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}}
 			;
 			
-
-
 startWhile	: {m_iWhileCounter++;};
 endWhile	: {m_iWhileCounter--;};
 
@@ -642,7 +640,7 @@ void bpIF2Statement(EXP_ATTRIBUTE S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTRI
 	CodeBuffer::instance().bpatch(B.trueList,M1.instr);
 	CodeBuffer::instance().bpatch(B.falseList,M2.instr);
 	vector<int> temp= CodeBuffer::instance().merge(S1.nextList,N.nextList);
-	S.nextList=merge(temp,S2.nextList);	
+	S.nextList=CodeBuffer::instance().merge(temp,S2.nextList);	
 }
 /*******************************HW5
 /*******************************HW5
