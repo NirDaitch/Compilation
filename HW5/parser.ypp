@@ -182,8 +182,8 @@ FormalDecl	:	Type	ID { funcArgs.push_back(createFunctionSymbol($2.name, $1.type,
 			|	Type	ID	LBRACK	NUM		B	RBRACK { checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name);  funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
 			;
 				
-Statements	:	Statement
-			|	Statements	 Statement
+Statements	:	Statement {CodeBuffer::instance().bpatch($1.nextList, CodeBuffer::instance().genLabel());}
+			|	Statements	 Statement {CodeBuffer::instance().bpatch($2.nextList, CodeBuffer::instance().genLabel());}
 			;
 
 Statement	:	LBRACE	ScopeStart	Statements RBRACE {$$.nextList=$3.nextList;} ScopeEnd
