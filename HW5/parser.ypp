@@ -101,8 +101,8 @@
 	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
 	int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType);
 	void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op);
-	void performAnd(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2);
-	void performOr(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2);
+	void performAnd(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2, EXP_ATTRIBUTE M);
+	void performOr(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2, EXP_ATTRIBUTE M);
 	string performRelop(int reg1, int reg2, string op);
 	
 	string performDiv_ResInB1(int iB1Register, int iB2Register);
@@ -229,8 +229,8 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 			|	FALSE			{ $$.type = Type_BOOL; $$.falseList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
 			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes1($2.name, $1, $3);}
 			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes2($2.name, $1, $3, $$.type);}
-			|	Exp AND Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;performAnd($$,$1,$3);}
-			|	Exp OR Exp		{ isBoolean($1.type); isBoolean($3.type); $$.type = Type_BOOL;performOr($$,$1,$3);}
+			|	Exp AND M Exp	{ isBoolean($1.type); isBoolean($4.type); $$.type = Type_BOOL;performAnd($$,$1,$4, $3);}
+			|	Exp OR M Exp	{ isBoolean($1.type); isBoolean($4.type); $$.type = Type_BOOL;performOr($$,$1,$4, $3);}
 			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $2.resultReg, $2.name);}
 			| 	Exp RELOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $2.resultReg, $2.name);}
 			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL; $$.trueList = $2.falseList; $$.falseList = $2.trueList;}
@@ -339,14 +339,18 @@ void markRegisterUsed(int iRegisterNumber)
 {
 	registerPool[iRegisterNumber] = 1;
 }
-void performAnd(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2)
+void performAnd(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2, EXP_ATTRIBUTE  M)
 {
-
+	CodeBuffer::instance().bpatch(e1.falseList,M.instr);
+	leftExp.trueList = e2.trueList;
+	leftExp.falseList = CodeBuffer::instance().merge(e1.falseList,e2.falseList);
 
 }
-void performOr(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2)
+void performOr(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2, EXP_ATTRIBUTE  M)
 {
-
+	CodeBuffer::instance().bpatch(e1.falseList, M.instr);
+	leftExp.trueList = CodeBuffer::instance().merge(e1.trueList, e2.trueList);
+	leftExp.falseList = e2.falseList;
 }
 int putNumInRegister(int num_value)
 {
@@ -491,7 +495,7 @@ string intToString(int theInt)
 
 void generateMMarker(EXP_ATTRIBUTE& exp)
 {
-	exp.nextInstr=CodeBuffer::instance().genLabel();
+	exp.instr=CodeBuffer::instance().genLabel();
 }
 
 void generateNMarker(EXP_ATTRIBUTE& exp)
