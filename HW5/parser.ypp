@@ -113,7 +113,8 @@
 	string performSubByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
 	string intToString(int theInt);
 	int putNumInRegister(int num_value);
-	void generateMMarker(EXP_ATTRIBUTE& leftExp);
+	void generateMMarker(EXP_ATTRIBUTE& exp);
+	void generateNMarker(EXP_ATTRIBUTE& exp);
 	///////////// maybe unneeded or requires change - was written earlier
 	string putVarInRegister(int iRegisterNumber, string sVarName);
 /*******************************HW5
@@ -252,7 +253,8 @@ ScopeEnd	:	{end_Scope();}
 ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printCodeBuffer();}
 			;
 
-
+M			:	{generateMMarker($$);}	;
+N			:	{generateNMarker($$);}	;
 
 %%
 
@@ -486,12 +488,17 @@ string intToString(int theInt)
 	stream << theInt;
 	return stream.str();
 }
-void generateMMarker(EXP_ATTRIBUTE& leftExp)
+
+void generateMMarker(EXP_ATTRIBUTE& exp)
 {
-	string nextInstr=CodeBuffer::instance().genLabel();
-	leftExp.nextInstr=nextInstr;
-	//todo
+	exp.nextInstr=CodeBuffer::instance().genLabel();
 }
+
+void generateNMarker(EXP_ATTRIBUTE& exp)
+{
+	exp.nextList=CodeBuffer::makelist(CodeBuffer::instance().emit("b "));
+}
+
 void saveAllRegisters()
 {
 	CodeBuffer::instance().emit("addi $sp , $sp,-72\n");
@@ -504,6 +511,7 @@ void saveAllRegisters()
 	}
 	
 }
+
 void loadAllRegisters()
 {
 	for(int i=8;i<=25;i++)
@@ -514,6 +522,7 @@ void loadAllRegisters()
 	}
 	CodeBuffer::instance().emit("addi $sp , $sp,72\n");
 }
+
 void storeValInStack(string variable, int iRegisterNumber)
 {
 	int posOfVar=getOffset(variable);	//TODO- make sure its correct
