@@ -1,7 +1,8 @@
 void main() {
-int x;
-	x= 8 + 1000000 / 100 - 5 * 7 + 5 - 14;
-
+	int x;
+	if (false || true) {
+		x=5;
+	}
 }
 
 

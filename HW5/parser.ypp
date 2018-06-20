@@ -197,7 +197,7 @@ Statement	:	LBRACE	ScopeStart	Statements RBRACE {$$.nextList=$3.nextList;} Scope
 			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);}
 			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} ScopeEnd
-			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd N ELSE ScopeStart M Statement {bpIF2Statement($$,$3,$6,$12,$7,$9,$13);} ScopeEnd
+			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement {bpIF2Statement($$,$3,$6,$12,$7,$11,$13);} ScopeEnd
 			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);/*TODO WHILE BP*/} ScopeStart Statement ScopeEnd endWhile
 			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}}
 			;
@@ -254,8 +254,10 @@ ScopeEnd	:	{end_Scope();}
 ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printCodeBuffer();}
 			;
 
-M			:	{generateMMarker($$);}	;
-N			:	{generateNMarker($$);}	;
+M			:	{generateMMarker($$);}	
+			;
+N			:	{generateNMarker($$);}	
+			;
 
 %%
 
