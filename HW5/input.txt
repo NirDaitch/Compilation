@@ -1,6 +1,6 @@
 void main() {
 	int x;
-	if (false || true) {
+	if (3 > 2) {
 		x=5;
 	}
 }

@@ -230,8 +230,8 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes2($2.name, $1, $3, $$.type);}
 			|	Exp AND M Exp	{ isBoolean($1.type); isBoolean($4.type); $$.type = Type_BOOL;performAnd($$,$1,$4, $3);}
 			|	Exp OR M Exp	{ isBoolean($1.type); isBoolean($4.type); $$.type = Type_BOOL;performOr($$,$1,$4, $3);}
-			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $2.resultReg, $2.name);}
-			| 	Exp RELOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $2.resultReg, $2.name);}
+			| 	Exp RELOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $3.resultReg, $2.name);}
+			| 	Exp RELOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = Type_BOOL; createRelop($$, $1.resultReg, $3.resultReg, $2.name);}
 			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL; $$.trueList = $2.falseList; $$.falseList = $2.trueList;}
 			;
 
