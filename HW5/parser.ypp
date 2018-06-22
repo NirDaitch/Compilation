@@ -27,7 +27,7 @@
 	
 	int registerPool[26];
 	vector<int> RABpatchMagic(0);
-	
+	vector<int> usedRegsByExplist;
 	////////////////CURRENT FUCNTION DATA///////////////
 	int m_iFUNCTION_CurrentOffset = -1;
 	list<T_Symbol> funcArgs;
@@ -92,7 +92,7 @@
 	void addPrintHelper();
 	void addPrintiHelper();
 	void storeFuncRetAddrInStack(int numOfArgs);
-	void storeValListInStack( vector<int> values);
+	void storeValListInStack(vector<int> values);
 	void initializeStackFP();
 	void addPrintFunc();
 	void addPrintiFunc();
@@ -204,7 +204,7 @@ Statements	:	Statement {CodeBuffer::instance().bpatch($1.nextList, CodeBuffer::i
 			|	Statements	 Statement {CodeBuffer::instance().bpatch($2.nextList, CodeBuffer::instance().genLabel());}
 			;
 
-Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextList;*/} ScopeEnd
+Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextList;    TODO !.!*/} ScopeEnd
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}/*TODO-check!.!*/
 			|	Type	ID	ASSIGN	Exp	SC	
 				{ 
@@ -271,18 +271,28 @@ Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLis
 			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} 
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement {bpIF2Statement($$,$3,$6,$12,$7,$11,$13);} ScopeEnd
 			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);/*TODO WHILE BP*/} ScopeStart Statement ScopeEnd endWhile
-			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}}
+			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}/*TODO !.!*/}
 			;
 			
 startWhile	: {m_iWhileCounter++;};
 endWhile	: {m_iWhileCounter--;};
 
 		
-Call 		:	ID LPAREN ExpList RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();}
-			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();};
+Call 		:	ID LPAREN ExpList RPAREN 
+			{
+				$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();
+				beforeFuncCall();
+				storeValListInStack( usedRegsByExplist );
+				usedRegsByExplist.clear();
+				CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");
+			}
+
+			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();	beforeFuncCall();CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");}
+			;
 				
-ExpList 	:	Exp {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);$$.sizeForStack =1;}
-			|	Exp COMMA ExpList {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);$$.sizeForStack = $3.sizeForStack+1;};
+ExpList 	:	Exp {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);$$.sizeForStack =1;usedRegsByExplist.push_back($1.resultReg);}
+			|	Exp COMMA ExpList {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);$$.sizeForStack = $3.sizeForStack+1;usedRegsByExplist.push_back($1.resultReg);}
+			;
 			
 Type		:	INT		{ $$.type = Type_INT;}
 			|	BYTE	{ $$.type = Type_BYTE;}
@@ -677,17 +687,17 @@ void initializeStackFP()
 }
 void storeValListInStack( vector<int> values)
 {
-	int offset = values.size()*VAR_SIZE; //TODO- make sure values.size is correct
+	int offset = values.size()*VAR_SIZE; 
 	ostringstream ss;
+	ostringstream ss2;
 	ss << offset;
 	CodeBuffer::instance().emit("add $sp , $sp , -"+ ss.str() +"\n");
 
 	for(int i =0;i<values.size();i++)
-	{
-		ostringstream ss;
-		ss << VAR_SIZE*i;
-		CodeBuffer::instance().emit("sw\t$" +intToString(values[values.size() - i -1]) +", " + ss.str() +"($sp)\n");
-		markRegisterUnused(values[values.size() - i -1]);
+	{		
+		ss2 << VAR_SIZE*i;
+		CodeBuffer::instance().emit("sw\t$" +intToString(values[values.size() - i -1]) +", " + ss2.str() +"($sp)\n");
+		markRegisterUnused(values[values.size() -i -1]);
 	}
 
 }
