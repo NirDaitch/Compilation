@@ -178,7 +178,7 @@ FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
 						CodeBuffer::instance().emit("syscall\n");
 					}
 					else CodeBuffer::instance().emit("jr\t$ra\n");
-					
+
 				}
 			;
 
@@ -205,7 +205,7 @@ Statements	:	Statement {CodeBuffer::instance().bpatch($1.nextList, CodeBuffer::i
 			;
 
 Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextList;*/} ScopeEnd
-			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
+			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}/*TODO-check!.!*/
 			|	Type	ID	ASSIGN	Exp	SC	
 				{ 
 					validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); 
@@ -259,7 +259,15 @@ Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLis
 				}
 			|	Call SC
 			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false); int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
-			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
+			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);
+
+				if ($2.type == Type_BOOL) 
+					{
+						handleBoolean($2);
+						markRegisterUnused($2.resultReg);
+					}
+				int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);
+				}
 			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} 
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement {bpIF2Statement($$,$3,$6,$12,$7,$11,$13);} ScopeEnd
 			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);/*TODO WHILE BP*/} ScopeStart Statement ScopeEnd endWhile
