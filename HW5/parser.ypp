@@ -99,7 +99,7 @@
 	void bpIF2Statement(EXP_ATTRIBUTE& S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTRIBUTE M2, EXP_ATTRIBUTE S1, EXP_ATTRIBUTE N, EXP_ATTRIBUTE S2);
 	void beforeFuncCall();
 	void popStackAfterFunction (int size);
-	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
+	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2,Type resType);
 	int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resType);
 	void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op);
 	void performAnd(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2, EXP_ATTRIBUTE M);
@@ -107,7 +107,7 @@
 	string performRelop(int reg1, int reg2, string op);
 	
 	string performDiv_ResInB1(int iB1Register, int iB2Register);
-	string performMul_ResInB1(int iB1Register, int iB2Register);
+	string performMul_ResInB1(int iB1Register, int iB2Register, int areBothByte);
 	string performAddByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
 	string performAddInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
 	string performSubInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
@@ -313,7 +313,7 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 			| 	STRING			{ $$.type = Type_STRING;}
 			|	TRUE			{ $$.type = Type_BOOL; $$.trueList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
 			|	FALSE			{ $$.type = Type_BOOL; $$.falseList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
-			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes1($2.name, $1, $3);}
+			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes1($2.name, $1, $3, $$.type);}
 			|	Exp BINOP_2 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes2($2.name, $1, $3, $$.type);}
 			|	Exp AND M Exp	{ isBoolean($1.type); isBoolean($4.type); $$.type = Type_BOOL;performAnd($$,$1,$4, $3);}
 			|	Exp OR M Exp	{ isBoolean($1.type); isBoolean($4.type); $$.type = Type_BOOL;performOr($$,$1,$4, $3);}
@@ -463,12 +463,7 @@ void performOr(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2, EXP_AT
 }
 int putNumInRegister(int num_value)
 {
-	int registerNum = getFirstAvailableRegister();
-	if (registerNum == -1)
-	{
-		cout << "no available registers!!" << endl;
-		exit(0); //// maybe handle this later, exit for now so we won't forget
-	}
+	int registerNum = getFirstAvailableRegister();	
 	markRegisterUsed(registerNum);
 	///li	$t1, 5	
 	string toEmit = "li\t$" + intToString(registerNum) + ", " + intToString(num_value);
@@ -508,6 +503,12 @@ int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resTyp
 			CodeBuffer::instance().emit(performAddByte_ResInResRegister(iB1Register, iB2Register, resRegister));
 		}
 	}
+
+	if(resType==Type_BYTE)
+	{
+		//handling bool overflow- truncating it with a mask, so result is in range 0-255
+		CodeBuffer::instance().emit("and\t"+intToString(iB1Register) + ", " +intToString(iB1Register)+ " , 0x000000ff\n");
+	}
 	
 	markRegisterUnused(iB1Register);
 	markRegisterUnused(iB2Register);
@@ -541,7 +542,7 @@ string performAddByte_ResInResRegister(int iB1Register, int iB2Register, int res
 }
 
 
-int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
+int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2,Type resType)
 {
 	int iB1Register = b1.resultReg;
 	int iB2Register = b2.resultReg;
@@ -551,7 +552,12 @@ int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2)
 		CodeBuffer::instance().emit(performDiv_ResInB1(iB1Register, iB2Register));
 	}
 	else if (op.compare("*") == 0) {
-		CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+		int areBothByte=0;
+		if(resType==Type_BYTE)
+		{
+			areBothByte=1;
+		}
+		CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register,areBothByte));
 	}
 	
 	markRegisterUnused(iB2Register);
@@ -569,16 +575,36 @@ int getOffset(string name)
 	}
 	return symb.offset;
 }
-string performMul_ResInB1(int iB1Register, int iB2Register)
+string performMul_ResInB1(int iB1Register, int iB2Register, int areBothByte)
 {
-	//// TODO: check if result is bigger than 32bit, if yes then mult result is also in mfhi
+	
 	string res = "mult\t$" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
 	res += "mflo\t$" + intToString(iB1Register);
+
+	if(areBothByte==1)
+	{
+		//handling bool overflow- truncating it with a mask, so result is in range 0-255
+		CodeBuffer::instance().emit("and\t"+intToString(iB1Register) + ", " +intToString(iB1Register)+ " , 0x000000ff\n");
+	}
 	return res;
 }
 
 string performDiv_ResInB1(int iB1Register, int iB2Register)
 {
+	int tmpReg=getFirstAvailableRegister();
+
+
+
+	//TODO: put in func
+	markRegisterUsed(tmpReg);
+	
+	CodeBuffer::instance().emit("li\t" + intToString(tmpReg) + " , 1\n");
+	CodeBuffer::instance().emit("bne\t"+intToString(tmpReg) + ", " + intToString(iB2Register) + ", throwDivException\n");
+	markRegisterUnused(tmpReg);
+	//TODO: put in func
+
+
+
 	string res = "div\t$" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
 	res += "mflo\t$" + intToString(iB1Register);
 	return res;
