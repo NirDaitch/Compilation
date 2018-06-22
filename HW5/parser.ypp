@@ -26,7 +26,7 @@
 	vector<string>  TYPES_TO_STRING;
 	
 	int registerPool[26];
-	
+	vector<int> RABpatchMagic(0);
 	
 	////////////////CURRENT FUCNTION DATA///////////////
 	int m_iFUNCTION_CurrentOffset = -1;
@@ -162,7 +162,23 @@ Program		:	ProgramScopeStart Funcs {checkHasMain();} ProgramScopeEnd ;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements RBRACE ScopeEnd {popStackAfterFunction($5.sizeForStack); /*TODO scope end should call function end scope*/}
+FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
+					CodeBuffer::instance().emit($3.name+":");
+					initializeStackFP();
+					storeFuncRetAddrInStack($5.sizeForStack); //TODO- use $5.sizeForStack in functionRemoveScope (at the end of funcdecl not here)
+				} RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements M RBRACE ScopeEnd 
+
+				{
+					CodeBuffer::instance().bpatch(RABpatchMagic,$12.instr);
+					RABpatchMagic.erase(RABpatchMagic.begin(),RABpatchMagic.end());
+					popStackAfterFunction($5.sizeForStack); 
+					if( $3.name=="main")
+					{
+						CodeBuffer::instance().emit("li\t$v0 , 10\n");
+						CodeBuffer::instance().emit("syscall\n");
+					}
+					else CodeBuffer::instance().emit("jr\t$ra\n");
+				}
 			;
 
 FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();};	
@@ -241,8 +257,8 @@ Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLis
 					
 				}
 			|	Call SC
-			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false);}
-			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);}
+			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false); int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
+			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
 			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} 
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement {bpIF2Statement($$,$3,$6,$12,$7,$11,$13);} ScopeEnd
 			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);/*TODO WHILE BP*/} ScopeStart Statement ScopeEnd endWhile
