@@ -178,6 +178,7 @@ FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
 						CodeBuffer::instance().emit("syscall\n");
 					}
 					else CodeBuffer::instance().emit("jr\t$ra\n");
+					
 				}
 			;
 
