@@ -229,7 +229,20 @@ Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLis
 					}
 					storeValInStack($1.name, $3.resultReg);
 				}
-			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type); checkRHSNotArray($6.is_array); validateIsArray($1.name);}
+			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  
+				{  
+					validateDefined($1.name,true); 
+					isIntOrByte($3.type); 
+					validateAssignment(validateAndGetTypeByName($1.name, true), $6.type); 
+					checkRHSNotArray($6.is_array); 
+					validateIsArray($1.name);
+					if ($6.type == Type_BOOL) 
+					{
+						handleBoolean($6);
+					}
+					storeValInStack($1.name, $6.resultReg);
+					
+				}
 			|	Call SC
 			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);}
@@ -312,7 +325,6 @@ void handleBoolean(EXP_ATTRIBUTE& exp)
 	CodeBuffer::instance().emit("li\t$" + intToString(newReg) + ", 0\n");
 	string tar = CodeBuffer::instance().genLabel();
 	CodeBuffer::instance().bpatch(CodeBuffer::instance().makelist(jmp), tar);
-	
 	CodeBuffer::instance().bpatch(exp.falseList, FALSELBL);
 	CodeBuffer::instance().bpatch(exp.trueList, TRUELBL);
 	
