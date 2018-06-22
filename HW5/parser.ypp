@@ -161,7 +161,7 @@ Program		:	ProgramScopeStart Funcs {checkHasMain();} ProgramScopeEnd ;
 Funcs		:	FuncDecl	Funcs
 			|	;
 
-FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements RBRACE ScopeEnd {popStackAfterFunction($5.sizeForStack);}
+FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements RBRACE ScopeEnd {popStackAfterFunction($5.sizeForStack); /*TODO scope end should call function end scope*/}
 			;
 
 FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();};	
@@ -186,7 +186,7 @@ Statements	:	Statement {CodeBuffer::instance().bpatch($1.nextList, CodeBuffer::i
 			|	Statements	 Statement {CodeBuffer::instance().bpatch($2.nextList, CodeBuffer::instance().genLabel());}
 			;
 
-Statement	:	LBRACE	ScopeStart	Statements RBRACE {$$.nextList=$3.nextList;} ScopeEnd
+Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextList;*/} ScopeEnd
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
@@ -508,22 +508,22 @@ void saveAllRegisters()
 {
 	CodeBuffer::instance().emit("addi $sp , $sp,-72\n");
 
-	for(int i=8;i<=25;i++)
+	for(int i=0;i<18;i++)
 	{
 		ostringstream ss;
 		ss<< i*VAR_SIZE;
-		CodeBuffer::instance().emit("sw\t$"  + intToString(i) +", " + ss.str()+  "($sp)\n");
+		CodeBuffer::instance().emit("sw\t$"  + intToString(i+8) +", " + ss.str()+  "($sp)\n");
 	}
 	
 }
 
 void loadAllRegisters()
 {
-	for(int i=8;i<=25;i++)
+	for(int i=0;i<18;i++)
 	{
 		ostringstream ss;
 		ss<< i*VAR_SIZE;
-		CodeBuffer::instance().emit("lw\t$" + intToString(i) + "," +ss.str()+  "($sp)\n");
+		CodeBuffer::instance().emit("lw\t$" + intToString(i+8) + "," +ss.str()+  "($sp)\n");
 	}
 	CodeBuffer::instance().emit("addi $sp , $sp,72\n");
 }
@@ -1208,8 +1208,11 @@ void createAndPushSymbol(string name, Type type, int size)
 	symbol.Type_ARRAY_SIZE=-1;//redundant, taken care of in constructor
 
 	//adding slot for it in the stack
-	CodeBuffer::instance().emit("addi\t$sp, $sp, -4\n");
+	CodeBuffer::instance().emit("addi\t$sp, $sp, -4\n");	
 
+	/////init///
+	CodeBuffer::instance().emit("sw\t$0, 4($sp)\n");
+	//// end init ///
 
 	if(size>-1)//its an array!
 	{

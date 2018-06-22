@@ -1,8 +1,6 @@
 void main() {
 	int x;
-	if (3 > 2) {
-		x=5;
-	}
+
 }
 
 
