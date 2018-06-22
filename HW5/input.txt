@@ -1,5 +1,6 @@
 void main() {
-	int x;
+	bool buih;
+	buih = true;
 
 }
 

@@ -96,7 +96,7 @@
 	void initializeStackFP();
 	void addPrintFunc();
 	void addPrintiFunc();
-	void bpIF2Statement(EXP_ATTRIBUTE S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTRIBUTE M2, EXP_ATTRIBUTE S1, EXP_ATTRIBUTE N, EXP_ATTRIBUTE S2);
+	void bpIF2Statement(EXP_ATTRIBUTE& S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTRIBUTE M2, EXP_ATTRIBUTE S1, EXP_ATTRIBUTE N, EXP_ATTRIBUTE S2);
 	void beforeFuncCall();
 	void popStackAfterFunction (int size);
 	int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2);
@@ -116,8 +116,12 @@
 	int putNumInRegister(int num_value);
 	void generateMMarker(EXP_ATTRIBUTE& exp);
 	void generateNMarker(EXP_ATTRIBUTE& exp);
+	
+	void handleBoolean(EXP_ATTRIBUTE& exp);
 	///////////// maybe unneeded or requires change - was written earlier
 	string putVarInRegister(int iRegisterNumber, string sVarName);
+	
+	
 /*******************************HW5
 /*******************************HW5
 /*******************************HW5
@@ -188,10 +192,43 @@ Statements	:	Statement {CodeBuffer::instance().bpatch($1.nextList, CodeBuffer::i
 
 Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextList;*/} ScopeEnd
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}
-			|	Type	ID	ASSIGN	Exp	SC	{ validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); createAndPushSymbol($2.name, $1.type,-1);}
-			|	Type	ID	LBRACK	NUM	RBRACK	SC {  validateNotAlreadyDefined($2.name); isIntOrByte($4.type); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name, $1.type,$4.num_value); }
-			|	Type	ID	LBRACK	NUM	B 	RBRACK SC {	validateNotAlreadyDefined($2.name); isIntOrByte($4.type); checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name); createAndPushSymbol($2.name,$1.type,$4.num_value); /*we take: A[5 b] same as: A[5]*/ }
-			|	ID	ASSIGN	Exp	SC {  validateDefined($1.name,true);  validateAssignmentDynamic($1.name, $3.name, $3.type,$3.is_array);}
+			|	Type	ID	ASSIGN	Exp	SC	
+				{ 
+					validateNotAlreadyDefined($2.name); validateAssignment($1.type, $4.type); 
+					createAndPushSymbol($2.name, $1.type,-1); 
+					
+					if ($1.type == Type_BOOL) 
+					{
+						handleBoolean($4);
+					}
+					storeValInStack($2.name, $4.resultReg);
+				}
+			|	Type	ID	LBRACK	NUM	RBRACK	SC 
+				{  
+					validateNotAlreadyDefined($2.name); 
+					isIntOrByte($4.type); 
+					validateArraySize($4.num_value, $2.name); 
+					createAndPushSymbol($2.name, $1.type,$4.num_value); 
+				}
+			|	Type	ID	LBRACK	NUM	B 	RBRACK SC 
+				{	
+					validateNotAlreadyDefined($2.name); 
+					isIntOrByte($4.type); 
+					checkByteSize($4.num_value, $4.name); 
+					validateArraySize($4.num_value, $2.name); 
+					createAndPushSymbol($2.name,$1.type,$4.num_value); 
+					/*we take: A[5 b] same as: A[5]*/ 
+				}
+			|	ID	ASSIGN	Exp	SC 
+				{  
+					validateDefined($1.name,true);  
+					validateAssignmentDynamic($1.name, $3.name, $3.type,$3.is_array);
+					if ($3.type == Type_BOOL) 
+					{
+						handleBoolean($3);
+					}
+					storeValInStack($1.name, $3.resultReg);
+				}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  {  validateDefined($1.name,true);  isIntOrByte($3.type);  validateAssignment(validateAndGetTypeByName($1.name, true), $6.type); checkRHSNotArray($6.is_array); validateIsArray($1.name);}
 			|	Call SC
 			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false);}
@@ -264,6 +301,25 @@ N			:	{generateNMarker($$);}
 /*******************************HW5
 /*******************************HW5
 /*******************************HW5*/
+
+void handleBoolean(EXP_ATTRIBUTE& exp)
+{
+	int newReg = getFirstAvailableRegister();
+	string TRUELBL = CodeBuffer::instance().genLabel();
+	CodeBuffer::instance().emit("li\t$" + intToString(newReg) + ", 1\n");
+	int jmp = CodeBuffer::instance().emit("b ");
+	string FALSELBL = CodeBuffer::instance().genLabel();
+	CodeBuffer::instance().emit("li\t$" + intToString(newReg) + ", 0\n");
+	string tar = CodeBuffer::instance().genLabel();
+	CodeBuffer::instance().bpatch(CodeBuffer::instance().makelist(jmp), tar);
+	
+	CodeBuffer::instance().bpatch(exp.falseList, FALSELBL);
+	CodeBuffer::instance().bpatch(exp.trueList, TRUELBL);
+	
+	
+	exp.resultReg = newReg;
+}
+
 void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op)
 {
 	string sIfStatement = performRelop(reg1, reg2, op);
@@ -635,7 +691,7 @@ void popStackAfterFunction (int size)
 	CodeBuffer::instance().emit("addi\t$sp, $sp, 8\n");
 	loadAllRegisters();
 }
-void bpIF2Statement(EXP_ATTRIBUTE S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTRIBUTE M2, EXP_ATTRIBUTE S1, EXP_ATTRIBUTE N, EXP_ATTRIBUTE S2)
+void bpIF2Statement(EXP_ATTRIBUTE& S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTRIBUTE M2, EXP_ATTRIBUTE S1, EXP_ATTRIBUTE N, EXP_ATTRIBUTE S2)
 {
 	CodeBuffer::instance().bpatch(B.trueList,M1.instr);
 	CodeBuffer::instance().bpatch(B.falseList,M2.instr);
