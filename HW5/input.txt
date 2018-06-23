@@ -1,6 +1,9 @@
 void main() {
 	bool buih;
 	buih = true;
+	
+	if (buih) {
+	}
 
 }
 

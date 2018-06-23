@@ -88,7 +88,7 @@
 	void loadAllRegisters();
 	int getOffset(string name);
 	void storeValInStack(string variable, int iRegisterNumber);	
-	int loadValFromStack(string variable);
+	void loadValFromStack(string variable, EXP_ATTRIBUTE& leftexp);
 	void addPrintHelper();
 	void addPrintiHelper();
 	void storeFuncRetAddrInStack(int numOfArgs);
@@ -117,10 +117,7 @@
 	void generateMMarker(EXP_ATTRIBUTE& exp);
 	void generateNMarker(EXP_ATTRIBUTE& exp);
 	
-	void handleBoolean(EXP_ATTRIBUTE& exp);
-	///////////// maybe unneeded or requires change - was written earlier
-	string putVarInRegister(int iRegisterNumber, string sVarName);
-	
+	void handleBoolean(EXP_ATTRIBUTE& exp);	
 	
 /*******************************HW5
 /*******************************HW5
@@ -269,7 +266,12 @@ Type		:	INT		{ $$.type = Type_INT;}
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseList = $2.falseList;}
 			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);}
-			|	ID				{ $$.type = validateAndGetTypeByName($1.name, true); $$.name = $1.name; $$.is_array = getIsArray($1.name);}
+			|	ID				
+				{ 
+					$$.type = validateAndGetTypeByName($1.name, true);
+					$$.name = $1.name; $$.is_array = getIsArray($1.name); 
+					loadValFromStack($1.name, $$);
+				}
 			|	Call			{ $$.type = $1.type;}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
@@ -318,6 +320,7 @@ N			:	{generateNMarker($$);}
 void handleBoolean(EXP_ATTRIBUTE& exp)
 {
 	int newReg = getFirstAvailableRegister();
+	markRegisterUsed(newReg);
 	string TRUELBL = CodeBuffer::instance().genLabel();
 	CodeBuffer::instance().emit("li\t$" + intToString(newReg) + ", 1\n");
 	int jmp = CodeBuffer::instance().emit("b ");
@@ -327,7 +330,6 @@ void handleBoolean(EXP_ATTRIBUTE& exp)
 	CodeBuffer::instance().bpatch(CodeBuffer::instance().makelist(jmp), tar);
 	CodeBuffer::instance().bpatch(exp.falseList, FALSELBL);
 	CodeBuffer::instance().bpatch(exp.trueList, TRUELBL);
-	
 	
 	exp.resultReg = newReg;
 }
@@ -340,6 +342,9 @@ void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op)
 	
 	int iNextInstruction2 = CodeBuffer::instance().emit("b ");
 	leftExp.falseList = CodeBuffer::makelist(iNextInstruction2);
+	
+	markRegisterUnused(reg1);
+	markRegisterUnused(reg2);
 }
 
 string performRelop(int reg1, int reg2, string op)
@@ -444,11 +449,7 @@ int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resTyp
 	int iB2Register = b2.resultReg;
 	
 	int resRegister = getFirstAvailableRegister();
-	if (resRegister == -1)
-	{
-		cout << "no available registers!!" << endl;
-		exit(0); //// maybe handle this later, exit for now so we won't forget
-	}
+	markRegisterUsed(resRegister);
 	
 	if 		(op.compare("-") == 0) 
 	{
@@ -548,13 +549,6 @@ string performDiv_ResInB1(int iB1Register, int iB2Register)
 	return res;
 }
 
-string putVarInRegister(int iRegisterNumber, string sVarName)
-{
-	string sRegisterNumber = intToString(iRegisterNumber);
-	//lw	$t0, var1  to load word from RAM
-	return "lw\t$" + sRegisterNumber + ", " + sVarName + ";\n";;
-}
-
 string intToString(int theInt)
 {
 	ostringstream stream;
@@ -605,16 +599,32 @@ void storeValInStack(string variable, int iRegisterNumber)
 	CodeBuffer::instance().emit("sw\t$" + intToString(iRegisterNumber) + ", " +ss.str()+"($fp)\n");
 	markRegisterUnused(iRegisterNumber);
 }
-int loadValFromStack(string variable)
+
+void loadValFromStack(string variable, EXP_ATTRIBUTE& leftExp)
 {
-	int posOfVar=getOffset(variable);	//TODO- make sure its correct
+	T_Symbol symb=getSymbol(variable);
+
+	int posOfVar=symb.offset;	//TODO- make sure its correct
 	int offsetFromFP = -posOfVar*VAR_SIZE;
 	int iDestRegister = getFirstAvailableRegister();
+	markRegisterUsed(iDestRegister);
+
+	if (symb.type == Type_BOOL)
+	{
+		int iRegister = getFirstAvailableRegister();
+		markRegisterUsed(iRegister);
+		CodeBuffer::instance().emit("li\t$" + intToString(iRegister) +", 1\n");
+		createRelop(leftExp, iRegister, iDestRegister,"==");
+		/// TODO: idest register is unused, remove next line
+		iDestRegister = 25;
+	}
+	
 	ostringstream ss;
 	ss << offsetFromFP;
 	CodeBuffer::instance().emit("lw\t$" + intToString(iDestRegister) + ", " +ss.str()+"($fp)\n");
-	return iDestRegister;
+	leftExp.resultReg=iDestRegister;
 }
+
 void addPrintHelper()
 {
 	CodeBuffer::instance().emit("lw\t$a0,0($sp)\n");
