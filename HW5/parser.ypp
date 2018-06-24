@@ -28,6 +28,7 @@
 	int registerPool[26];
 	vector<int> RABpatchMagic(0);
 	vector<int> usedRegsByExplist;
+	int currentRegisterPool[26];
 	////////////////CURRENT FUCNTION DATA///////////////
 	int m_iFUNCTION_CurrentOffset = -1;
 	list<T_Symbol> funcArgs;
@@ -81,6 +82,10 @@
 /*******************************HW5*/	
 	
 	void initRegisterPool();
+	void loadRegisterPool();
+	void initCurrentRegisterPool();
+	void saveCurrentRegisterPool();
+	void markAllRegisterPool();
 	int getFirstAvailableRegister();
 	void markRegisterUnused(int iRegisterNumber);
 	void markRegisterUsed(int iRegisterNumber);
@@ -165,8 +170,8 @@ Funcs		:	FuncDecl	Funcs
 FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
 					CodeBuffer::instance().emit($3.name+":");
 					initializeStackFP();
-					storeFuncRetAddrInStack($5.sizeForStack); //TODO- use $5.sizeForStack in functionRemoveScope (at the end of funcdecl not here)
-				} RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements M RBRACE ScopeEnd 
+					storeFuncRetAddrInStack($5.sizeForStack); 
+				} RPAREN {validateNotAlreadyDefined($3.name);	createFunctionObj($3.name,$2.type);}	LBRACE ScopeStartFunction Statements M RBRACE  
 
 				{
 					CodeBuffer::instance().bpatch(RABpatchMagic,$12.instr);
@@ -179,10 +184,13 @@ FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
 					}
 					else CodeBuffer::instance().emit("jr\t$ra\n");
 
-				}
+
+					loadRegisterPool();
+
+				} ScopeEnd/*TODO- maybe put it back where it belonged at the end of line 170*/
 			;
 
-FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();};	
+FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();saveCurrentRegisterPool();};	
 
 RetType		:	Type {$$.type=$1.type;}
 			| 	VOID {$$.type=Type_VOID;}
@@ -204,7 +212,7 @@ Statements	:	Statement {CodeBuffer::instance().bpatch($1.nextList, CodeBuffer::i
 			|	Statements	 Statement {CodeBuffer::instance().bpatch($2.nextList, CodeBuffer::instance().genLabel());}
 			;
 
-Statement	:	LBRACE	ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextList;    TODO !.!*/} ScopeEnd
+Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextList;    TODO !.!*/} ScopeEnd 
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}/*TODO-check!.!*/
 			|	Type	ID	ASSIGN	Exp	SC	
 				{ 
@@ -325,16 +333,16 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 Exp_boolean	:   Exp {isBoolean($1.type);}
 			;
 
-ScopeStart	:	{start_Scope();}
+ScopeStart	:	{start_Scope(); saveCurrentRegisterPool();}
 			;
 			
-ProgramScopeStart	:	{ initRegisterPool(); program_scope_start(); }
+ProgramScopeStart	:	{ initRegisterPool(); program_scope_start();initCurrentRegisterPool(); }
 			;
 			
 ScopeStartFunction	:	{start_scope_function();}
 			;
 		
-ScopeEnd	:	{end_Scope();}
+ScopeEnd	:	{end_Scope(); loadRegisterPool();}
 			;
 ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printCodeBuffer();}
 			;
@@ -425,7 +433,26 @@ void initRegisterPool()
 	for(int i=0;i<26;i++)
 		registerPool[i]=0;
 }
-
+void initCurrentRegisterPool()
+{
+	for(int i=0;i<26;i++)
+		currentRegisterPool[i]=0;
+}
+void saveCurrentRegisterPool()
+{
+	for(int i=0;i<26;i++)
+	currentRegisterPool[i]=registerPool[i];
+}
+void loadRegisterPool()
+{
+	for(int i=0;i<26;i++)
+	registerPool[i]=currentRegisterPool[i];
+}
+void markAllRegisterPool()
+{
+	for(int i=0;i<26;i++)
+		registerPool[i]=1;
+}
 int getFirstAvailableRegister()
 {
 	for(int i=8;i<26;i++)
@@ -637,6 +664,7 @@ void saveAllRegisters()
 		ss<< i*VAR_SIZE;
 		CodeBuffer::instance().emit("sw\t$"  + intToString(i+8) +", " + ss.str()+  "($sp)\n");
 	}
+	initRegisterPool();//they are saved, so now they are all free to use!
 	
 }
 
@@ -649,6 +677,8 @@ void loadAllRegisters()
 		CodeBuffer::instance().emit("lw\t$" + intToString(i+8) + "," +ss.str()+  "($sp)\n");
 	}
 	CodeBuffer::instance().emit("addi $sp , $sp,72\n");
+
+	
 }
 
 void storeValInStack(string variable, int iRegisterNumber)
@@ -757,11 +787,14 @@ void beforeFuncCall()
 {
 	//save mr register:
 	saveAllRegisters();
+
 	//move sp down to add a slot for the return address and FP
 	CodeBuffer::instance().emit("addi\t$sp, $sp, -8\n");
 	//put the return address on the stack in that spot we just allocated
 	CodeBuffer::instance().emit("sw\t$fp, 4($sp)\n");
 	//todo- check if its working
+
+
 	return;
 }
 void popStackAfterFunction (int size)
