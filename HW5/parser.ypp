@@ -333,7 +333,22 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 					$$.name = $1.name; $$.is_array = getIsArray($1.name); 
 					loadValFromStack($1.name, $$);
 				}
-			|	Call			{ $$.type = $1.type;}
+			|	Call			{ $$.type = $1.type;
+
+					$$.resultReg = getFirstAvailableRegister();
+					markRegisterUsed($$.resultReg);
+					CodeBuffer::instance().emit("move\t$"+ intToString($$.resultReg) +" , $v0\n");
+					if($1.type == Type_BOOL)
+						{	
+							int tmpReg = getFirstAvailableRegister();
+							markRegisterUsed(tmpReg);
+							CodeBuffer::instance().emit("li\t$" + intToString(tmpReg) +", 1");							
+							createRelop($$,$$.resultReg,tmpReg,"==");
+						}
+				
+
+
+				}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	STRING			{ $$.type = Type_STRING;$$.name = $1.name;  
@@ -666,6 +681,7 @@ void checkIndexOutOfRange(EXP_ATTRIBUTE array,EXP_ATTRIBUTE variable)
 	{
 		if(variable.num_value<0 || variable.num_value>array.num_value-1)
 		{
+			//TODO- create a function handling indexError error
 			CodeBuffer::instance().emit("beq\t$8 , $8, indexERR\n"); //
 		}
 
@@ -787,8 +803,7 @@ void loadValFromStack(string variable, EXP_ATTRIBUTE& leftExp)
 		markRegisterUsed(iRegister);
 		CodeBuffer::instance().emit("li\t$" + intToString(iRegister) +", 1\n");
 		createRelop(leftExp, iRegister, iDestRegister,"==");
-		/// TODO: idest register is unused, remove next line
-		iDestRegister = 25;
+		
 	}
 	
 	ostringstream ss;
