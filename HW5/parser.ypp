@@ -90,6 +90,7 @@
 	void markRegisterUnused(int iRegisterNumber);
 	void markRegisterUsed(int iRegisterNumber);
 	void saveAllRegisters();
+	void addDiv0Func();
 	void loadAllRegisters();
 	int getOffset(string name);
 	void storeValInStack(string variable, int iRegisterNumber);	
@@ -110,7 +111,7 @@
 	void performAnd(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2, EXP_ATTRIBUTE M);
 	void performOr(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2, EXP_ATTRIBUTE M);
 	string performRelop(int reg1, int reg2, string op);
-	
+	void addPrintPrintiDiv0();
 	string performDiv_ResInB1(int iB1Register, int iB2Register);
 	string performMul_ResInB1(int iB1Register, int iB2Register, int areBothByte);
 	string performAddByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
@@ -604,6 +605,27 @@ int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2,Type resType
 	return iB1Register;
 	//// result in iB1Register
 }
+
+void addDiv0Func()
+{
+	CodeBuffer::instance().emitData("throwDivException: .asciiz \"Error division by zero\\n\"");
+	CodeBuffer::instance().emit("throwDivException:");	
+	CodeBuffer::instance().emit("li $v0,4");
+	CodeBuffer::instance().emit("la $a0,throwDivException");
+	CodeBuffer::instance().emit("syscall");
+	CodeBuffer::instance().emit("li $v0,10");
+	CodeBuffer::instance().emit("syscall");
+}
+
+void addPrintPrintiDiv0()
+{
+	addDiv0Func();
+	addPrintFunc();
+	addPrintiFunc();
+}
+
+
+
 int getOffset(string name)
 {
 	T_Symbol symb=getSymbol(name);
@@ -973,6 +995,12 @@ void program_scope_start()
 	list<T_Symbol> lstArgs1;
 	lstArgs1.push_back(integerSymbol);
 	addFunctionToSymbolTable("printi", Type_VOID, lstArgs1);
+
+	T_Symbol voidSymbol;
+	voidSymbol.type=Type_VOID;
+	list<T_Symbol> lstArgs3;
+	//lstArgs3.push_back(voidSymbol);
+	addFunctionToSymbolTable("throwDivException", Type_VOID,lstArgs3);
 
 }
 
@@ -1463,6 +1491,8 @@ int main()
 	TYPES_TO_STRING.push_back("STRING");
 	TYPES_TO_STRING.push_back("VOID");
 	TYPES_TO_STRING.push_back("BOOL");
+
+	addPrintPrintiDiv0();
 	yyparse();
 }
 
