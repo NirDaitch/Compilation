@@ -278,11 +278,13 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 				if ($2.type == Type_BOOL) 
 					{
 						handleBoolean($2);
-						markRegisterUnused($2.resultReg);
+						
 					}
-
+				markRegisterUnused($2.resultReg);
 				int tmp = CodeBuffer::instance().emit("b ");
 				RABpatchMagic.push_back(tmp);
+
+
 				}
 			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} 
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement {bpIF2Statement($$,$3,$6,$12,$7,$11,$13);} ScopeEnd
