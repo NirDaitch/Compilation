@@ -359,7 +359,7 @@ ScopeStartFunction	:	{start_scope_function();}
 		
 ScopeEnd	:	{end_Scope(); loadRegisterPool();}
 			;
-ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printCodeBuffer();}
+ProgramScopeEnd	:	{end_Scope();  CodeBuffer::instance().printCodeBuffer();}
 			;
 
 M			:	{generateMMarker($$);}	
