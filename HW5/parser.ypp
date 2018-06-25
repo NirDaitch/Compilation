@@ -662,8 +662,8 @@ string performDiv_ResInB1(int iB1Register, int iB2Register)
 	//TODO: put in func
 	markRegisterUsed(tmpReg);
 	
-	CodeBuffer::instance().emit("li\t$" + intToString(tmpReg) + " , 1\n");
-	CodeBuffer::instance().emit("bne\t$"+intToString(tmpReg) + ", $" + intToString(iB2Register) + ", throwDivException\n");
+	CodeBuffer::instance().emit("li\t$" + intToString(tmpReg) + " , 0\n");
+	CodeBuffer::instance().emit("beq\t$"+intToString(tmpReg) + ", $" + intToString(iB2Register) + ", throwDivException\n");
 	markRegisterUnused(tmpReg);
 	//TODO: put in func
 
