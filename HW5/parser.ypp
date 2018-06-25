@@ -373,6 +373,7 @@ N			:	{generateNMarker($$);}
 
 void handleBoolean(EXP_ATTRIBUTE& exp)
 {
+	markRegisterUnused(exp.resultReg);
 	int newReg = getFirstAvailableRegister();
 	markRegisterUsed(newReg);
 	string TRUELBL = CodeBuffer::instance().genLabel();
