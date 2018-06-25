@@ -31,8 +31,7 @@
 	int currentRegisterPool[26];
 	////////////////CURRENT FUCNTION DATA///////////////
 	int m_iFUNCTION_CurrentOffset = -1;
-	list<T_Symbol> funcArgs;
-	int labelCounter=0;
+	list<T_Symbol> funcArgs;	
 	vector<EXP_ATTRIBUTE> funcCallTypes;
 
 
@@ -353,16 +352,7 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	STRING			{ $$.type = Type_STRING;$$.name = $1.name;  
 
-					//*** TODO ***
-					// maybe remove?. also nobody frees this register
-					/*ostringstream ss;
-					ss << "xxSTR_"<<labelCounter;
-					CodeBuffer::instance().emitData(ss.str()+": .asciiz " +$1.name);
-					labelCounter++;
-					$$.resultReg = getFirstAvailableRegister();
-					markRegisterUsed($$.resultReg);
-					CodeBuffer::instance().emit("la\t$" + intToString($$.resultReg) +
-						", " + ss.str()+ "\n"); */
+					
 				}
 			|	TRUE			{ $$.type = Type_BOOL; $$.trueList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
 			|	FALSE			{ $$.type = Type_BOOL; $$.falseList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
@@ -657,6 +647,7 @@ void addPrintPrintiDiv0()
 	addPrintFunc();
 	addPrintiFunc();
 }
+
 
 void checkIndexOutOfRange(EXP_ATTRIBUTE array,EXP_ATTRIBUTE variable)
 {
