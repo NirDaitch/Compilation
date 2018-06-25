@@ -280,13 +280,16 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 			|	RETURN  SC { checkFuncValidReturn(Type_VOID,-1, false); int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);
 
-				//CodeBuffer::instance().emit("move\t$v0 ,$" + intToString($2.resultReg) + "\n" ); //todo- when enabling this, 2 tests fail
+				int expReg=$2.resultReg;
 				if ($2.type == Type_BOOL) 
 					{
 						handleBoolean($2);
 						
 					}
 				markRegisterUnused($2.resultReg);
+				//CodeBuffer::instance().emit("move\t$v0 ,$" + intToString(expReg) + "\n" ); //todo- when enabling this, 2 tests fail
+				//those 2 tests are on level 5.
+				
 				int tmp = CodeBuffer::instance().emit("b ");
 				RABpatchMagic.push_back(tmp);
 
@@ -504,7 +507,8 @@ int getFirstAvailableRegister()
 
 void markRegisterUnused(int iRegisterNumber)
 {
-	registerPool[iRegisterNumber] = 0;
+	if(iRegisterNumber>=0 && iRegisterNumber<=25)
+		registerPool[iRegisterNumber] = 0;
 }
 
 void markRegisterUsed(int iRegisterNumber)
