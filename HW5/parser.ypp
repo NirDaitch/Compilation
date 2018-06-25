@@ -274,7 +274,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false); int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);
 
-				//CodeBuffer::instance().emit("move\t$v0 ," + intToString($2.resultReg) + "\n" ); todo- when enabling this, 2 tests fail
+				CodeBuffer::instance().emit("move\t$v0 ,$" + intToString($2.resultReg) + "\n" ); //todo- when enabling this, 2 tests fail
 				if ($2.type == Type_BOOL) 
 					{
 						handleBoolean($2);
@@ -283,6 +283,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 				markRegisterUnused($2.resultReg);
 				int tmp = CodeBuffer::instance().emit("b ");
 				RABpatchMagic.push_back(tmp);
+
 
 
 				}
