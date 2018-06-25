@@ -59,7 +59,7 @@ break 									{								return BREAK;};
 ([a-zA-Z][a-zA-Z0-9]*) 					{yylval.name = string(yytext); 	return ID;};
 										
 (0|[1-9][0-9]*) 						{yylval.num_value=atoi(yytext); yylval.name=yytext; yylval.type = Type_INT; return NUM;};
-\"([^\n\r\"\\]|\\[rnt"\\])+\" 			{yylval.type = Type_STRING; 	return STRING;};
+\"([^\n\r\"\\]|\\[rnt"\\])+\" 			{yylval.type = Type_STRING; yylval.name = string(yytext); 	return STRING;};
 
 {whitespace}                     ;
 
