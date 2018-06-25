@@ -185,7 +185,12 @@ FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
 					else CodeBuffer::instance().emit("jr\t$ra\n");
 
 
+					//for(int i=0;i<26;i++)
+						//cout<<"regpool["<<i<<"]="<<registerPool[i]<<" , currentRegPool[i]="<<currentRegisterPool[i]<<endl;
+						//todo-remove cout
+
 					loadRegisterPool();
+
 
 				} ScopeEnd/*TODO- maybe put it back where it belonged at the end of line 170*/
 			;
@@ -269,12 +274,15 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false); int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);
 
+				//CodeBuffer::instance().emit("move\t$v0 ," + intToString($2.resultReg) + "\n" ); todo- when enabling this, 2 tests fail
 				if ($2.type == Type_BOOL) 
 					{
 						handleBoolean($2);
 						markRegisterUnused($2.resultReg);
 					}
-				int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);
+
+				int tmp = CodeBuffer::instance().emit("b ");
+				RABpatchMagic.push_back(tmp);
 				}
 			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} 
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement {bpIF2Statement($$,$3,$6,$12,$7,$11,$13);} ScopeEnd
