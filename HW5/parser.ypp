@@ -550,7 +550,7 @@ int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resTyp
 	if(resType==Type_BYTE)
 	{
 		//handling bool overflow- truncating it with a mask, so result is in range 0-255
-		CodeBuffer::instance().emit("and\t"+intToString(iB1Register) + ", " +intToString(iB1Register)+ " , 0x000000ff\n");
+		CodeBuffer::instance().emit("and\t$"+intToString(iB1Register) + ", $" +intToString(iB1Register)+ " , 0x000000ff\n");
 	}
 	
 	markRegisterUnused(iB1Register);
@@ -648,7 +648,7 @@ string performMul_ResInB1(int iB1Register, int iB2Register, int areBothByte)
 	if(areBothByte==1)
 	{
 		//handling bool overflow- truncating it with a mask, so result is in range 0-255
-		CodeBuffer::instance().emit("and\t"+intToString(iB1Register) + ", " +intToString(iB1Register)+ " , 0x000000ff\n");
+		CodeBuffer::instance().emit("and\t$"+intToString(iB1Register) + ", $" +intToString(iB1Register)+ " , 0x000000ff\n");
 	}
 	return res;
 }
