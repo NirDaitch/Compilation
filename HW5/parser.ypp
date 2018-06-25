@@ -229,6 +229,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					{
 						handleBoolean($4);
 					}
+					//cout<<"fafa\n";
 					storeValInStack($2.name, $4.resultReg);
 				}
 			|	Type	ID	LBRACK	NUM	RBRACK	SC 
@@ -255,6 +256,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					{
 						handleBoolean($3);
 					}
+					//cout<<"kaka\n";
 					storeValInStack($1.name, $3.resultReg);
 				}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  
@@ -268,6 +270,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					{
 						handleBoolean($6);
 					}
+					//cout<<"TATA\n";
 					storeValInStack($1.name, $6.resultReg);
 					
 				}
@@ -319,7 +322,7 @@ Type		:	INT		{ $$.type = Type_INT;}
 			|	BOOL	{ $$.type = Type_BOOL;};
 
 			
-Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseList = $2.falseList;}
+Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseList = $2.falseList;$$.resultReg=$2.resultReg;}
 			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);}
 			|	ID				
 				{ 
@@ -717,6 +720,7 @@ void loadAllRegisters()
 
 void storeValInStack(string variable, int iRegisterNumber)
 {
+	//cout<<"STOREVALINSTACK entered\n";
 	int posOfVar=getOffset(variable);	//TODO- make sure its correct
 	int offsetFromFP = -posOfVar*VAR_SIZE;
 	ostringstream ss;
