@@ -359,7 +359,7 @@ ScopeStartFunction	:	{start_scope_function();}
 		
 ScopeEnd	:	{end_Scope(); loadRegisterPool();}
 			;
-ProgramScopeEnd	:	{end_Scope();  CodeBuffer::instance().printCodeBuffer();}
+ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printDataBuffer();  CodeBuffer::instance().printCodeBuffer();}
 			;
 
 M			:	{generateMMarker($$);}	
@@ -612,7 +612,7 @@ int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2,Type resType
 void addDiv0Func()
 {
 	CodeBuffer::instance().emitData("throwDivException: .asciiz \"Error division by zero\\n\"");
-	CodeBuffer::instance().emit("throwDivException:");	
+	CodeBuffer::instance().emit("divisonERR:");	
 	CodeBuffer::instance().emit("li $v0,4");
 	CodeBuffer::instance().emit("la $a0,throwDivException");
 	CodeBuffer::instance().emit("syscall");
@@ -663,7 +663,7 @@ string performDiv_ResInB1(int iB1Register, int iB2Register)
 	markRegisterUsed(tmpReg);
 	
 	CodeBuffer::instance().emit("li\t$" + intToString(tmpReg) + " , 0\n");
-	CodeBuffer::instance().emit("beq\t$"+intToString(tmpReg) + ", $" + intToString(iB2Register) + ", throwDivException\n");
+	CodeBuffer::instance().emit("beq\t$"+intToString(tmpReg) + ", $" + intToString(iB2Register) + ", divisonERR\n");
 	markRegisterUnused(tmpReg);
 	//TODO: put in func
 
@@ -1498,6 +1498,7 @@ int main()
 
 	addPrintPrintiDiv0();
 	yyparse();
+	
 }
 
 int yyerror(const char * message)
