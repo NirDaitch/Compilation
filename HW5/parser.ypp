@@ -32,7 +32,7 @@
 	////////////////CURRENT FUCNTION DATA///////////////
 	int m_iFUNCTION_CurrentOffset = -1;
 	list<T_Symbol> funcArgs;
-	
+	int labelCounter=0;
 	vector<EXP_ATTRIBUTE> funcCallTypes;
 
 
@@ -278,7 +278,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					
 				}
 			|	Call SC
-			|	RETURN  SC {checkFuncValidReturn(Type_VOID,-1, false); int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
+			|	RETURN  SC { checkFuncValidReturn(Type_VOID,-1, false); int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);
 
 				//CodeBuffer::instance().emit("move\t$v0 ,$" + intToString($2.resultReg) + "\n" ); //todo- when enabling this, 2 tests fail
@@ -336,7 +336,19 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 			|	Call			{ $$.type = $1.type;}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
-			| 	STRING			{ $$.type = Type_STRING;}
+			| 	STRING			{ $$.type = Type_STRING;$$.name = $1.name;  
+
+					//*** TODO ***
+					// maybe remove?. also nobody frees this register
+					/*ostringstream ss;
+					ss << "xxSTR_"<<labelCounter;
+					CodeBuffer::instance().emitData(ss.str()+": .asciiz " +$1.name);
+					labelCounter++;
+					$$.resultReg = getFirstAvailableRegister();
+					markRegisterUsed($$.resultReg);
+					CodeBuffer::instance().emit("la\t$" + intToString($$.resultReg) +
+						", " + ss.str()+ "\n"); */
+				}
 			|	TRUE			{ $$.type = Type_BOOL; $$.trueList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
 			|	FALSE			{ $$.type = Type_BOOL; $$.falseList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
 			|	Exp BINOP_1 Exp	{ isIntOrByte($1.type); isIntOrByte($3.type); $$.type = getTypeBinop($1.type, $3.type); $$.resultReg = generateBinopRes1($2.name, $1, $3, $$.type);}
