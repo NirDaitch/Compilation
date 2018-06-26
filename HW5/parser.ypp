@@ -104,6 +104,7 @@
 	void initializeStackFP();
 	void addPrintFunc();
 	void addPrintiFunc();
+	int generateBinop3(string op, int iB1Register,int iB2Register, Type resType);
 	void bpIF2Statement(EXP_ATTRIBUTE& S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTRIBUTE M2, EXP_ATTRIBUTE S1, EXP_ATTRIBUTE N, EXP_ATTRIBUTE S2);
 	void beforeFuncCall();
 	void popStackAfterFunction (int size);
@@ -334,7 +335,39 @@ Type		:	INT		{ $$.type = Type_INT;}
 
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseList = $2.falseList;$$.resultReg=$2.resultReg;}
-			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);}
+			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);
+
+				checkIndexOutOfRange($1,$3);
+				
+
+				T_Symbol symb=getSymbol($1.name);
+
+				int posOfVar=symb.offset;	
+				int offsetFromFP = posOfVar;  
+				int iDestRegister = getFirstAvailableRegister();
+				markRegisterUsed(iDestRegister);
+
+				if (symb.type == Type_BOOL)
+				{
+					int iRegister = getFirstAvailableRegister();
+					markRegisterUsed(iRegister);
+					CodeBuffer::instance().emit("li\t$" + intToString(iRegister) +", 1\n");
+					createRelop($$, iRegister, iDestRegister,"==");		
+				}
+				int tmpRegister = getFirstAvailableRegister();
+				markRegisterUsed(tmpRegister);
+				CodeBuffer::instance().emit("addi\t$" + intToString(tmpRegister) + ", $" +intToString($3.resultReg)+", "+intToString(offsetFromFP) +"\n");
+				CodeBuffer::instance().emit("sub\t$" + intToString(tmpRegister) + ", $0 " + ", $" + intToString(tmpRegister) +"\n");
+				//tmpRegister holds -offset, now we need to *4
+				int tmpRegister2=putNumInRegister(VAR_SIZE);
+				generateBinop3("*",tmpRegister,tmpRegister2,$3.type);
+				//tmpregister2 is freed.
+
+				CodeBuffer::instance().emit("lw\t$" + intToString(iDestRegister) + ", " +intToString(tmpRegister)+"($fp)\n");
+				$$.resultReg=iDestRegister;
+				markRegisterUnused(tmpRegister);
+			}
+
 			|	ID				
 				{ 
 					$$.type = validateAndGetTypeByName($1.name, true);
@@ -364,7 +397,7 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 				ostringstream ss;
 				ss << "mylbl_"<<labelCounter;
 				$$.resultReg=getFirstAvailableRegister();
-				markRegisterUsed(resultReg);
+				markRegisterUsed($$.resultReg);
 				CodeBuffer::instance().emitData(ss.str() + ": .asciiz " +$1.name);				
 				CodeBuffer::instance().emit("la\t$" + intToString($$.resultReg) +", " + ss.str() + "\n");
 				labelCounter++;
@@ -650,6 +683,32 @@ int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2,Type resType
 	//// result in iB1Register
 }
 
+int generateBinop3(string op, int iB1Register,int iB2Register, Type resType)
+{
+	if (op.compare("/") == 0)
+	{
+		CodeBuffer::instance().emit(performDiv_ResInB1(iB1Register, iB2Register));
+	}
+	else if (op.compare("*") == 0) {
+		
+		
+		CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
+		if(resType==Type_BYTE)
+		{
+			//handling bool overflow- truncating it with a mask, so result is in range 0-255
+			CodeBuffer::instance().emit("and\t$"+intToString(iB1Register) + ", $" +intToString(iB1Register)+ " , 0x000000ff\n");
+		
+		}
+		
+			
+	}
+
+	
+	markRegisterUnused(iB2Register);
+	
+	return iB1Register;
+	//// result in iB1Register
+}
 
 void addDiv0Func()
 {
