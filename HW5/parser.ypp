@@ -90,6 +90,7 @@
 	void markRegisterUsed(int iRegisterNumber);
 	void saveAllRegisters();
 	void addDiv0Func();
+	void addIndexOutOfRangeFunc();
 	void checkIndexOutOfRange(EXP_ATTRIBUTE array,EXP_ATTRIBUTE variable);
 	void loadAllRegisters();
 	int getOffset(string name);
@@ -267,7 +268,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					checkRHSNotArray($6.is_array); 
 					validateIsArray($1.name);
 					//checking if [exp] is not out of range
-					//checkIndexOutOfRange($1,$3); TODO. also might need to check in other places too
+					//checkIndexOutOfRange($1,$3); //TODO. also might need to check in other places too
 					if ($6.type == Type_BOOL) 
 					{
 						handleBoolean($6);
@@ -289,7 +290,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 				markRegisterUnused($2.resultReg);
 				//CodeBuffer::instance().emit("move\t$v0 ,$" + intToString(expReg) + "\n" ); //todo- when enabling this, 2 tests fail
 				//those 2 tests are on level 5.
-				
+
 				int tmp = CodeBuffer::instance().emit("b ");
 				RABpatchMagic.push_back(tmp);
 
@@ -644,6 +645,17 @@ void addDiv0Func()
 	CodeBuffer::instance().emit("li $v0,10");
 	CodeBuffer::instance().emit("syscall");
 }
+void addIndexOutOfRangeFunc()
+{
+	CodeBuffer::instance().emitData("throwIndexOutOfRange: .asciiz \"Error index out of bounds\\n\"");
+	CodeBuffer::instance().emit("indexERR:");	
+	CodeBuffer::instance().emit("li $v0,4");
+	CodeBuffer::instance().emit("la $a0,throwIndexOutOfRange");
+	CodeBuffer::instance().emit("syscall");
+	CodeBuffer::instance().emit("li $v0,10");
+	CodeBuffer::instance().emit("syscall");
+
+}
 
 void addPrintPrintiDiv0()
 {
@@ -675,7 +687,8 @@ void checkIndexOutOfRange(EXP_ATTRIBUTE array,EXP_ATTRIBUTE variable)
 	else //variable is a NUM/NUM B and we can syntactically check
 	{
 		if(variable.num_value<0 || variable.num_value>array.num_value-1)
-		{
+		{	
+
 			//TODO- create a function handling indexError error
 			CodeBuffer::instance().emit("beq\t$8 , $8, indexERR\n"); //
 		}
@@ -1552,6 +1565,7 @@ int main()
 	TYPES_TO_STRING.push_back("BOOL");
 
 	addPrintPrintiDiv0();
+	addIndexOutOfRangeFunc();
 	yyparse();
 	
 }
