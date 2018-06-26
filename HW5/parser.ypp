@@ -546,29 +546,28 @@ int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resTyp
 	int iB1Register = b1.resultReg;
 	int iB2Register = b2.resultReg;
 	
-	int resRegister = getFirstAvailableRegister();
-	markRegisterUsed(resRegister);
+	
 	
 	if 		(op.compare("-") == 0) 
 	{
 		if (resType == Type_INT)
 		{
-			CodeBuffer::instance().emit(performSubInt_ResInResRegister(iB1Register, iB2Register, resRegister));
+			CodeBuffer::instance().emit(performSubInt_ResInResRegister(iB1Register, iB2Register, iB1Register));
 		}
 		else
 		{
-			CodeBuffer::instance().emit(performSubByte_ResInResRegister(iB1Register, iB2Register, resRegister));
+			CodeBuffer::instance().emit(performSubByte_ResInResRegister(iB1Register, iB2Register, iB1Register));			
 		}
 	}
 	else if (op.compare("+") == 0) 
 	{
 		if (resType == Type_INT)
 		{
-			CodeBuffer::instance().emit(performAddInt_ResInResRegister(iB1Register, iB2Register, resRegister));
+			CodeBuffer::instance().emit(performAddInt_ResInResRegister(iB1Register, iB2Register, iB1Register));
 		}
 		else
 		{
-			CodeBuffer::instance().emit(performAddByte_ResInResRegister(iB1Register, iB2Register, resRegister));
+			CodeBuffer::instance().emit(performAddByte_ResInResRegister(iB1Register, iB2Register, iB1Register));
 		}
 	}
 
@@ -576,19 +575,19 @@ int generateBinopRes2(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2, Type resTyp
 	{
 		//handling bool overflow- truncating it with a mask, so result is in range 0-255
 		CodeBuffer::instance().emit("and\t$"+intToString(iB1Register) + ", $" +intToString(iB1Register)+ " , 0x000000ff\n");
-	}
+	}	
 	
-	markRegisterUnused(iB1Register);
 	markRegisterUnused(iB2Register);
 	//// could be optimized to use B1 again as result register
 	
-	return resRegister;
+	return iB1Register;
 }
 
 string performSubByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
 {
 	//addu	$t1,$t6,$t7
 	return "subu\t$" + intToString(resRegister) + ", $" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
+
 }
 
 string performSubInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister)
