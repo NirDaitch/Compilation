@@ -25,6 +25,7 @@
 	int m_iCurrentOffset = 0;
 	vector<string>  TYPES_TO_STRING;
 	
+	int labelCounter=0;
 	int registerPool[26];
 	vector<int> RABpatchMagic(0);
 	vector<int> usedRegsByExplist;
@@ -358,9 +359,15 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 				}
 			|	NUM				{ $$.type = Type_INT; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
 			| 	NUM B			{ checkByteSize($1.num_value,$1.name); $$.type = Type_BYTE; $$.num_value = $1.num_value; $$.resultReg = putNumInRegister($1.num_value);}
-			| 	STRING			{ $$.type = Type_STRING;$$.name = $1.name;  
+			| 	STRING			{ $$.type = Type_STRING;$$.name = $1.name;
 
-					
+				ostringstream ss;
+				ss << "mylbl_"<<labelCounter;
+				$$.resultReg=getFirstAvailableRegister();
+				markRegisterUsed(resultReg);
+				CodeBuffer::instance().emitData(ss.str() + ": .asciiz " +$1.name);				
+				CodeBuffer::instance().emit("la\t$" + intToString($$.resultReg) +", " + ss.str() + "\n");
+				labelCounter++;
 				}
 			|	TRUE			{ $$.type = Type_BOOL; $$.trueList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
 			|	FALSE			{ $$.type = Type_BOOL; $$.falseList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));}
