@@ -261,18 +261,22 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					storeValInStack($1.name, $3.resultReg);
 				}
 			|	ID	LBRACK  Exp RBRACK ASSIGN Exp SC  
-				{  
+				{ 
 					validateDefined($1.name,true); 
 					isIntOrByte($3.type); 
 					validateAssignment(validateAndGetTypeByName($1.name, true), $6.type); 
 					checkRHSNotArray($6.is_array); 
-					validateIsArray($1.name);
+					validateIsArray($1.name);					 
+					
 					//checking if [exp] is not out of range
-					//checkIndexOutOfRange($1,$3); //TODO. also might need to check in other places too
+					checkIndexOutOfRange($1,$3); //TODO. also might need to check in other places too
+					
+
 					if ($6.type == Type_BOOL) 
 					{
 						handleBoolean($6);
 					}
+					
 					//cout<<"TATA\n";
 					storeValInStack($1.name, $6.resultReg);
 					
@@ -673,32 +677,19 @@ void addPrintPrintiDiv0()
 void checkIndexOutOfRange(EXP_ATTRIBUTE array,EXP_ATTRIBUTE variable)
 {
 	T_Symbol arraySymb=getSymbol(array.name);	
-	if(variable.num_value==-1)
-	{ //its an ID. find it in the table, then load it from stack into register, 
-	//then check if its between 0 and arrayName size(also needs to be taken from table to get its position on stack)
+	int arraySizeRegister=getFirstAvailableRegister();
+	markRegisterUsed(arraySizeRegister);	
+	//loading their values into the registers
+	CodeBuffer::instance().emit("li\t$" + intToString(arraySizeRegister) + "," +  intToString(  arraySymb.Type_ARRAY_SIZE  - 1) + "\n"); 
 
-		
-		int arraySizeRegister=getFirstAvailableRegister();
-		markRegisterUsed(arraySizeRegister);
-		int variableSizeRegister=getFirstAvailableRegister();
-		markRegisterUsed(variableSizeRegister);
-		//loading their values into the registers
+	 //checking that size isn't greater than array size
+	CodeBuffer::instance().emit("bgt\t$" + intToString(variable.resultReg) + " , $" + intToString(arraySizeRegister) + " , indexERR\n");
+	//checking that size is at least zero
+	CodeBuffer::instance().emit("blt\t$" + intToString(variable.resultReg) + " , $0" +   " , indexERR\n"); 
 
-		// CodeBuffer::instance().emit("li\t$" + intToString(arraySizeRegister) + "," +array.num_value-1\n"); 
-		// CodeBuffer::instance().emit("lw\t$" + intToString(variableSizeRegister) + "," +intToString(XXX)+  "($sp)\n");
-		//TODO!!! XXX should tell me the position of 'variable' on the stack. this is hard :(
-
-	}
-	else //variable is a NUM/NUM B and we can syntactically check
-	{
-		if(variable.num_value<0 || variable.num_value>array.num_value-1)
-		{	
-
-			//TODO- create a function handling indexError error
-			CodeBuffer::instance().emit("beq\t$8 , $8, indexERR\n"); //
-		}
-
-	}
+	markRegisterUnused(arraySizeRegister);
+	
+	
 }
 
 int getOffset(string name)
