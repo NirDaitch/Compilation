@@ -232,6 +232,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					if ($1.type == Type_BOOL) 
 					{
 						handleBoolean($4);
+						$$.nextList = $4.nextList;
 					}
 					//cout<<"fafa\n";
 					storeValInStack($2.name, $4.resultReg);
@@ -415,7 +416,7 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 			|	NOT Exp			{ isBoolean($2.type);  $$.type = Type_BOOL; $$.trueList = $2.falseList; $$.falseList = $2.trueList;}
 			;
 
-Exp_boolean	:   Exp {isBoolean($1.type);}
+Exp_boolean	:   Exp {isBoolean($1.type); $$.trueList = $1.trueList; $$.falseList = $1.falseList; $$.nextList = $1.nextList;}
 			;
 
 ScopeStart	:	{start_Scope(); saveCurrentRegisterPool();}
@@ -564,7 +565,7 @@ void markRegisterUsed(int iRegisterNumber)
 }
 void performAnd(EXP_ATTRIBUTE& leftExp, EXP_ATTRIBUTE e1,EXP_ATTRIBUTE e2, EXP_ATTRIBUTE  M)
 {
-	CodeBuffer::instance().bpatch(e1.falseList,M.instr);
+	CodeBuffer::instance().bpatch(e1.trueList,M.instr);
 	leftExp.trueList = e2.trueList;
 	leftExp.falseList = CodeBuffer::instance().merge(e1.falseList,e2.falseList);
 
