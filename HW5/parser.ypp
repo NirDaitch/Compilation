@@ -306,7 +306,12 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 
 
 				}
-			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} 
+			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd 
+				{
+					CodeBuffer::instance().bpatch($3.trueList,$6.instr); 
+					//CodeBuffer::instance().bpatch($3.falseList,CodeBuffer::instance().genLabel()); 
+					$$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);
+				} 
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement 
 				{
 					bpIF2Statement($$,$3,$6,$12,$7,$11,$13);
@@ -322,18 +327,42 @@ endWhile	: {m_iWhileCounter--;};
 		
 Call 		:	ID LPAREN ExpList RPAREN 
 			{
-				$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();
+				$$.type = validateAndGetTypeByName($1.name, false); 
+				validateCallFunction($1.name, funcCallTypes); 
+				funcCallTypes.clear();
 				beforeFuncCall();
 				storeValListInStack( usedRegsByExplist );
 				usedRegsByExplist.clear();
 				CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");
+				
+				///////////////////////////////
+				$$.nextList = $3.nextList;
 			}
 
 			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();	beforeFuncCall();CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");}
 			;
 				
-ExpList 	:	Exp {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);$$.sizeForStack =1;usedRegsByExplist.push_back($1.resultReg);}
-			|	Exp COMMA ExpList {EXP_ATTRIBUTE symbol; symbol.type=$1.type; symbol.name=$1.name; funcCallTypes.push_back(symbol);$$.sizeForStack = $3.sizeForStack+1;usedRegsByExplist.push_back($1.resultReg);}
+ExpList 	:	Exp 
+				{
+					EXP_ATTRIBUTE symbol; 
+					symbol.type=$1.type; 
+					symbol.name=$1.name; 
+					funcCallTypes.push_back(symbol);
+					$$.sizeForStack =1;usedRegsByExplist.push_back($1.resultReg); 
+					///////////////
+					$$.nextList = $1.nextList;
+				}
+			|	Exp COMMA ExpList 
+				{
+					EXP_ATTRIBUTE symbol; 
+					symbol.type=$1.type; 
+					symbol.name=$1.name; 
+					funcCallTypes.push_back(symbol);
+					$$.sizeForStack = $3.sizeForStack+1;
+					usedRegsByExplist.push_back($1.resultReg);
+					/////////////////////
+					$$.nextList = CodeBuffer::instance().merge($1.nextList, $3.nextList);
+				}
 			;
 			
 Type		:	INT		{ $$.type = Type_INT;}
