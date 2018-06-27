@@ -114,7 +114,7 @@
 	string performRelop(int reg1, int reg2, string op);
 	void addPrintPrintiDiv0();
 	string performDiv_ResInB1(int iB1Register, int iB2Register);
-	string performMul_ResInB1(int iB1Register, int iB2Register, int areBothByte);
+	string performMul_ResInB1(int iB1Register, int iB2Register);
 	string performAddByte_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
 	string performAddInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
 	string performSubInt_ResInResRegister(int iB1Register, int iB2Register, int resRegister);
@@ -620,13 +620,19 @@ int generateBinopRes1(string op, EXP_ATTRIBUTE b1, EXP_ATTRIBUTE b2,Type resType
 		CodeBuffer::instance().emit(performDiv_ResInB1(iB1Register, iB2Register));
 	}
 	else if (op.compare("*") == 0) {
-		int areBothByte=0;
+		
+		
+		CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register));
 		if(resType==Type_BYTE)
 		{
-			areBothByte=1;
+			//handling bool overflow- truncating it with a mask, so result is in range 0-255
+			CodeBuffer::instance().emit("and\t$"+intToString(iB1Register) + ", $" +intToString(iB1Register)+ " , 0x000000ff\n");
+		
 		}
-		CodeBuffer::instance().emit(performMul_ResInB1(iB1Register, iB2Register,areBothByte));
+		
+			
 	}
+
 	
 	markRegisterUnused(iB2Register);
 	
@@ -706,17 +712,12 @@ int getOffset(string name)
 	}
 	return symb.offset;
 }
-string performMul_ResInB1(int iB1Register, int iB2Register, int areBothByte)
+string performMul_ResInB1(int iB1Register, int iB2Register)
 {
 	
 	string res = "mult\t$" + intToString(iB1Register) + ", $" + intToString(iB2Register) + "\n";
 	res += "mflo\t$" + intToString(iB1Register);
 
-	if(areBothByte==1)
-	{
-		//handling bool overflow- truncating it with a mask, so result is in range 0-255
-		CodeBuffer::instance().emit("and\t$"+intToString(iB1Register) + ", $" +intToString(iB1Register)+ " , 0x000000ff\n");
-	}
 	return res;
 }
 
@@ -731,6 +732,7 @@ string performDiv_ResInB1(int iB1Register, int iB2Register)
 	
 	CodeBuffer::instance().emit("li\t$" + intToString(tmpReg) + " , 0\n");
 	CodeBuffer::instance().emit("beq\t$"+intToString(tmpReg) + ", $" + intToString(iB2Register) + ", divisionERR\n");
+	//cout << "#tmpReg: " << tmpReg << ", iB1Register: " << iB1Register << ", iB2Register: " << iB2Register << endl;
 	markRegisterUnused(tmpReg);
 	//TODO: put in func
 
