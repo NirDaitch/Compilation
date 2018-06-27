@@ -334,9 +334,6 @@ Call 		:	ID LPAREN ExpList RPAREN
 				storeValListInStack( usedRegsByExplist );
 				usedRegsByExplist.clear();
 				CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");
-				
-				///////////////////////////////
-				$$.nextList = $3.nextList;
 			}
 
 			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();	beforeFuncCall();CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");}
@@ -348,9 +345,16 @@ ExpList 	:	Exp
 					symbol.type=$1.type; 
 					symbol.name=$1.name; 
 					funcCallTypes.push_back(symbol);
-					$$.sizeForStack =1;usedRegsByExplist.push_back($1.resultReg); 
-					///////////////
-					$$.nextList = $1.nextList;
+					$$.sizeForStack =1;
+					
+					if ($1.type == Type_BOOL) 
+					{
+						handleBoolean($1);
+						//$$.nextList = $1.nextList;
+					}
+					
+					usedRegsByExplist.push_back($1.resultReg); 
+
 				}
 			|	Exp COMMA ExpList 
 				{
@@ -360,8 +364,6 @@ ExpList 	:	Exp
 					funcCallTypes.push_back(symbol);
 					$$.sizeForStack = $3.sizeForStack+1;
 					usedRegsByExplist.push_back($1.resultReg);
-					/////////////////////
-					$$.nextList = CodeBuffer::instance().merge($1.nextList, $3.nextList);
 				}
 			;
 			
