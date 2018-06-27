@@ -231,7 +231,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					if ($1.type == Type_BOOL) 
 					{
 						handleBoolean($4);
-						$$.nextList = $4.nextList;
+						//$$.nextList = $4.nextList;
 					}
 					//cout<<"fafa\n";
 					storeValInStack($2.name, $4.resultReg);
@@ -457,6 +457,9 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 							markRegisterUsed(tmpReg);
 							CodeBuffer::instance().emit("li\t$" + intToString(tmpReg) +", 1");							
 							createRelop($$,$$.resultReg,tmpReg,"==");
+							//resultreg and tmpreg are freed
+							
+							$$.resultReg = -1;
 						}
 				
 
@@ -518,6 +521,7 @@ N			:	{generateNMarker($$);}
 void handleBoolean(EXP_ATTRIBUTE& exp)
 {
 	markRegisterUnused(exp.resultReg);
+	//cout<<"exp.resultreg is "<<exp.resultReg<< "id is "<< exp.name;
 	int newReg = getFirstAvailableRegister();
 	markRegisterUsed(newReg);
 	string TRUELBL = CodeBuffer::instance().genLabel();
