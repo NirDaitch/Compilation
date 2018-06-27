@@ -55,6 +55,11 @@ vector<int> CodeBuffer::merge(const vector<int> &l1,const vector<int> &l2)
 	return newList;
 }
 
+int CodeBuffer::getSize()
+{
+	return buffer.size();
+}
+
 // ******** Methods to handle the data section ********** //
 void CodeBuffer::emitData(const std::string& dataLine) 
 {

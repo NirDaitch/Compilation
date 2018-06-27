@@ -34,6 +34,8 @@ public:
 
 
 	static std::vector<int> makelist(int litem);
+	
+	int getSize();
 
 	static std::vector<int> merge(const std::vector<int> &l1,const std::vector<int> &l2);
 

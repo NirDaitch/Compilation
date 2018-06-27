@@ -307,7 +307,11 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 
 				}
 			| 	IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd {CodeBuffer::instance().bpatch($3.trueList,$6.instr); $$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);} 
-			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement {bpIF2Statement($$,$3,$6,$12,$7,$11,$13);} ScopeEnd
+			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement 
+				{
+					bpIF2Statement($$,$3,$6,$12,$7,$11,$13);
+				} 
+				ScopeEnd
 			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);/*TODO WHILE BP*/} ScopeStart Statement ScopeEnd endWhile
 			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}/*TODO !.!*/}
 			;
@@ -1002,8 +1006,12 @@ void bpIF2Statement(EXP_ATTRIBUTE& S,EXP_ATTRIBUTE B, EXP_ATTRIBUTE M1, EXP_ATTR
 {
 	CodeBuffer::instance().bpatch(B.trueList,M1.instr);
 	CodeBuffer::instance().bpatch(B.falseList,M2.instr);
-	vector<int> temp= CodeBuffer::instance().merge(S1.nextList,N.nextList);
-	S.nextList=CodeBuffer::instance().merge(temp,S2.nextList);	
+
+	CodeBuffer::instance().bpatch(N.nextList, CodeBuffer::instance().genLabel());
+	
+	//not sure if above or this is the best solution
+	//vector<int> temp= CodeBuffer::instance().merge(S1.nextList,N.nextList);
+	//S.nextList=CodeBuffer::instance().merge(temp,S2.nextList);	
 }
 /*******************************HW5
 /*******************************HW5
