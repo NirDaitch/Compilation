@@ -358,11 +358,18 @@ ExpList 	:	Exp
 				}
 			|	Exp COMMA ExpList 
 				{
+					if ($1.type == Type_BOOL) 
+					{
+						handleBoolean($1);
+						//$$.nextList = $1.nextList;
+					}
 					EXP_ATTRIBUTE symbol; 
 					symbol.type=$1.type; 
 					symbol.name=$1.name; 
 					funcCallTypes.push_back(symbol);
 					$$.sizeForStack = $3.sizeForStack+1;
+					
+
 					usedRegsByExplist.push_back($1.resultReg);
 				}
 			;
