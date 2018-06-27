@@ -24,9 +24,11 @@
 	ScopeStack m_stScopeStack;
 	int m_iCurrentOffset = 0;
 	vector<string>  TYPES_TO_STRING;
+
 	
 	int labelCounter=0;
 	int registerPool[26];
+	int currentRegisterPool[26];
 	vector<int> RABpatchMagic(0);
 
 	////////////////CURRENT FUCNTION DATA///////////////
@@ -81,7 +83,9 @@
 /*******************************HW5*/	
 	
 	void initRegisterPool();
-
+	void initCurrentRegPool();
+	void loadRegistersFromMainToCurrent();
+	void loadRegistersFromCurrentToMain();
 	int getFirstAvailableRegister();
 	void markRegisterUnused(int iRegisterNumber);
 	void markRegisterUsed(int iRegisterNumber);
@@ -487,7 +491,7 @@ Exp_boolean	:   Exp {isBoolean($1.type); $$.trueList = $1.trueList; $$.falseList
 ScopeStart	:	{start_Scope(); }
 			;
 			
-ProgramScopeStart	:	{ initRegisterPool(); program_scope_start(); }
+ProgramScopeStart	:	{ initRegisterPool();/*initCurrentRegPool();*/ program_scope_start(); }
 			;
 			
 ScopeStartFunction	:	{start_scope_function();}
@@ -584,8 +588,23 @@ void initRegisterPool()
 {
 	for(int i=0;i<26;i++)
 		registerPool[i]=0;
-}
 
+}
+void initCurrentRegPool()
+{
+	for(int i=0;i<26;i++)
+		registerPool[i]=0;
+}
+void loadRegistersFromMainToCurrent()
+{
+	for(int i=0;i<26;i++)
+		currentRegisterPool[i]=registerPool[i];
+}
+void loadRegistersFromCurrentToMain()
+{
+	for(int i=0;i<26;i++)
+		registerPool[i]=currentRegisterPool[i];
+}
 int getFirstAvailableRegister()
 {
 	for(int i=8;i<26;i++)
@@ -875,7 +894,8 @@ void saveAllRegisters()
 		ss<< i*VAR_SIZE;
 		CodeBuffer::instance().emit("sw\t$"  + intToString(i+8) +", " + ss.str()+  "($sp)\n");
 	}
-	initRegisterPool();//they are saved, so now they are all free to use!
+	//loadRegistersFromMainToCurrent();
+	//initRegisterPool();//they are saved, so now they are all free to use!
 	
 }
 
@@ -888,6 +908,8 @@ void loadAllRegisters()
 		CodeBuffer::instance().emit("lw\t$" + intToString(i+8) + "," +ss.str()+  "($sp)\n");
 	}
 	CodeBuffer::instance().emit("addi $sp , $sp,72\n");
+	//loadRegistersFromCurrentToMain();
+	//initCurrentRegPool();
 
 	
 }
