@@ -95,7 +95,8 @@
 	void checkIndexOutOfRange(EXP_ATTRIBUTE array,EXP_ATTRIBUTE variable);
 	void loadAllRegisters();
 	int getOffset(string name);
-	void storeValInStack(string variable, int iRegisterNumber);	
+	void storeValInStack(string variable, int iRegisterNumber);		
+	void storeValArrayInStack(string arrayID, int indexRegister, int toStoreRegister);
 	void loadValFromStack(string variable, EXP_ATTRIBUTE& leftexp);
 	void addPrintHelper();
 	void addPrintiHelper();
@@ -271,7 +272,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					validateIsArray($1.name);					 
 					
 					//checking if [exp] is not out of range
-					checkIndexOutOfRange($1,$3); //TODO. also might need to check in other places too
+					checkIndexOutOfRange($1,$3); 
 					
 
 					if ($6.type == Type_BOOL) 
@@ -280,7 +281,8 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					}
 					
 					//cout<<"TATA\n";
-					storeValInStack($1.name, $6.resultReg);
+					storeValArrayInStack($1.name, $3.resultReg, $6.resultReg);
+					
 					
 				}
 			|	Call SC
@@ -853,9 +855,35 @@ void storeValInStack(string variable, int iRegisterNumber)
 	CodeBuffer::instance().emit("sw\t$" + intToString(iRegisterNumber) + ", " +ss.str()+"($fp)\n");
 	markRegisterUnused(iRegisterNumber);
 }
+void storeValArrayInStack(string arrayID, int indexRegister, int toStoreRegister)
+{
+	T_Symbol symb=getSymbol(arrayID);
+	
+	int offsetFromFP=symb.offset;	
+ 
+	int tmpRegister = getFirstAvailableRegister();
+	markRegisterUsed(tmpRegister);
+	CodeBuffer::instance().emit("addi\t$" + intToString(tmpRegister) + ", $" +intToString(indexRegister)+", "+intToString(offsetFromFP) +"\n");
+	CodeBuffer::instance().emit("sub\t$" + intToString(tmpRegister) + ", $0 " + ", $" + intToString(tmpRegister) +"\n");
+	//tmpRegister holds -offset, now we need to *4
+	int tmpRegister2=putNumInRegister(VAR_SIZE);
+	generateBinop3("*",tmpRegister,tmpRegister2,Type_INT);
+	//tmpregister2 is freed.
+	
+	///tmpRegister has the offset now
+	
+	CodeBuffer::instance().emit("add\t$" + intToString(tmpRegister) + ", $" +intToString(tmpRegister)+", $fp\n");
+	
+	CodeBuffer::instance().emit("sw\t$" + intToString(toStoreRegister) + ", ($" + intToString(tmpRegister) + ")\n");
+	markRegisterUnused(tmpRegister);
+	
+	markRegisterUnused(toStoreRegister);
+	markRegisterUnused(indexRegister);
+}
 
 void loadValFromStack(string variable, EXP_ATTRIBUTE& leftExp)
 {
+	/// TODO: deal with array
 	T_Symbol symb=getSymbol(variable);
 
 	int posOfVar=symb.offset;	//TODO- make sure its correct
