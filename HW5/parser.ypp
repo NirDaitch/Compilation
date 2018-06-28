@@ -29,7 +29,6 @@
 	int registerPool[26];
 	vector<int> RABpatchMagic(0);
 
-	int currentRegisterPool[26];
 	////////////////CURRENT FUCNTION DATA///////////////
 	int m_iFUNCTION_CurrentOffset = -1;
 	list<T_Symbol> funcArgs;	
@@ -82,10 +81,7 @@
 /*******************************HW5*/	
 	
 	void initRegisterPool();
-	void loadRegisterPool();
-	void initCurrentRegisterPool();
-	void saveCurrentRegisterPool();
-	void markAllRegisterPool();
+
 	int getFirstAvailableRegister();
 	void markRegisterUnused(int iRegisterNumber);
 	void markRegisterUsed(int iRegisterNumber);
@@ -194,13 +190,12 @@ FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
 						//cout<<"regpool["<<i<<"]="<<registerPool[i]<<" , currentRegPool[i]="<<currentRegisterPool[i]<<endl;
 						//todo-remove cout
 
-					loadRegisterPool();
 
 
 				} ScopeEnd/*TODO- maybe put it back where it belonged at the end of line 170*/
 			;
 
-FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();saveCurrentRegisterPool();};	
+FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();};	
 
 RetType		:	Type {$$.type=$1.type;}
 			| 	VOID {$$.type=Type_VOID;}
@@ -489,16 +484,16 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 Exp_boolean	:   Exp {isBoolean($1.type); $$.trueList = $1.trueList; $$.falseList = $1.falseList; $$.nextList = $1.nextList;}
 			;
 
-ScopeStart	:	{start_Scope(); saveCurrentRegisterPool();}
+ScopeStart	:	{start_Scope(); }
 			;
 			
-ProgramScopeStart	:	{ initRegisterPool(); program_scope_start();initCurrentRegisterPool(); }
+ProgramScopeStart	:	{ initRegisterPool(); program_scope_start(); }
 			;
 			
 ScopeStartFunction	:	{start_scope_function();}
 			;
 		
-ScopeEnd	:	{end_Scope(); loadRegisterPool();}
+ScopeEnd	:	{end_Scope();}
 			;
 ProgramScopeEnd	:	{end_Scope(); CodeBuffer::instance().printDataBuffer();  CodeBuffer::instance().printCodeBuffer();}
 			;
@@ -590,26 +585,7 @@ void initRegisterPool()
 	for(int i=0;i<26;i++)
 		registerPool[i]=0;
 }
-void initCurrentRegisterPool()
-{
-	for(int i=0;i<26;i++)
-		currentRegisterPool[i]=0;
-}
-void saveCurrentRegisterPool()
-{
-	for(int i=0;i<26;i++)
-	currentRegisterPool[i]=registerPool[i];
-}
-void loadRegisterPool()
-{
-	for(int i=0;i<26;i++)
-	registerPool[i]=currentRegisterPool[i];
-}
-void markAllRegisterPool()
-{
-	for(int i=0;i<26;i++)
-		registerPool[i]=1;
-}
+
 int getFirstAvailableRegister()
 {
 	for(int i=8;i<26;i++)
