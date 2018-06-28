@@ -1,0 +1,26 @@
+void testIn1(bool bin, byte in){
+    return;
+}
+
+byte returnByte() {
+    return 254 b;
+}
+
+int returnInt() {
+    return 1;
+}
+
+bool returnBool() {
+    return false;
+}
+
+void main() {
+    //test parameter+conversions
+    bool bb = true;
+
+    int i3 = returnByte();
+    testIn1(true,returnByte());
+
+    printi(i3);
+
+}
