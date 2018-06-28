@@ -317,8 +317,25 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					bpIF2Statement($$,$3,$6,$12,$7,$11,$13);
 				} 
 				ScopeEnd
-			|	WHILE startWhile LPAREN  Exp  RPAREN  {isBoolean($4.type);/*TODO WHILE BP*/} ScopeStart Statement ScopeEnd endWhile
-			|	BREAK SC {if ((m_iWhileCounter) <= 0) {errorUnexpectedBreak(yylineno); exit(0);}/*TODO !.!*/}
+			|	WHILE startWhile LPAREN M Exp  RPAREN  
+				{
+					isBoolean($5.type);
+				} 
+				ScopeStart M Statement ScopeEnd endWhile
+				{
+					CodeBuffer::instance().bpatch($10.nextList,$4.instr); 
+					CodeBuffer::instance().bpatch($5.trueList,$9.instr);
+					$$.nextList = CodeBuffer::instance().merge($10.whileBreakList, $5.falseList);
+					CodeBuffer::instance().emit("b " + $4.instr);
+				}
+			|	BREAK SC 
+				{
+					if ((m_iWhileCounter) <= 0) {
+						errorUnexpectedBreak(yylineno); exit(0);
+					}
+					$$.whileBreakList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));
+					
+				}
 			;
 			
 startWhile	: {m_iWhileCounter++;};
