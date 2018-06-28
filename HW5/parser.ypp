@@ -217,11 +217,40 @@ FormalDecl	:	Type	ID { funcArgs.push_back(createFunctionSymbol($2.name, $1.type,
 			|	Type	ID	LBRACK	NUM		B	RBRACK { checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name);  funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
 			;
 				
-Statements	:	Statement {CodeBuffer::instance().bpatch($1.nextList, CodeBuffer::instance().genLabel());}
-			|	Statements	 Statement {CodeBuffer::instance().bpatch($2.nextList, CodeBuffer::instance().genLabel());}
+Statements	:	Statement 
+				{
+					//////
+					//
+					//					CodeBuffer::instance().emit("finishing statement 1 is: " + $1.name
+					//+", whileBreakList size is: " + intToString($1.whileBreakList.size()));
+					//$$.name = $1.name;
+					//////
+					
+					
+					CodeBuffer::instance().bpatch($1.nextList, CodeBuffer::instance().genLabel()); 
+					//$$.nextList = $1.nextList;
+					$$.whileBreakList = $1.whileBreakList;
+				}
+			|	Statements	 Statement 
+				{
+					CodeBuffer::instance().bpatch($2.nextList, CodeBuffer::instance().genLabel());
+					//$$.nextList = CodeBuffer::instance().merge($1.nextList, $2.nextList);
+					$$.whileBreakList = CodeBuffer::instance().merge($1.whileBreakList, $2.whileBreakList);
+				}
 			;
 
-Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextList;    TODO !.!*/} ScopeEnd 
+Statement	:	LBRACE	 ScopeStart	Statements RBRACE ScopeEnd
+				{
+					
+					$$.whileBreakList = $3.whileBreakList; 
+					//////
+					//CodeBuffer::instance().emit("in {statements}\n");
+					//
+					//					CodeBuffer::instance().emit("finishing statement 2 is: " + $3.name
+					//+", whileBreakList size is: " + intToString($3.whileBreakList.size()));
+					//$$.name = $3.name;
+					//////
+				}  
 			|	Type	ID	SC 	{  validateNotAlreadyDefined($2.name); createAndPushSymbol($2.name, $1.type,-1);}/*TODO-check!.!*/
 			|	Type	ID	ASSIGN	Exp	SC	
 				{ 
@@ -315,10 +344,12 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 					CodeBuffer::instance().bpatch($3.trueList,$6.instr); 
 					//CodeBuffer::instance().bpatch($3.falseList,CodeBuffer::instance().genLabel()); 
 					$$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);
+					$$.whileBreakList = $7.whileBreakList;
 				} 
 			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement 
 				{
 					bpIF2Statement($$,$3,$6,$12,$7,$11,$13);
+					$$.whileBreakList = CodeBuffer::instance().merge($7.whileBreakList, $13.whileBreakList);
 				} 
 				ScopeEnd
 			|	WHILE startWhile LPAREN M Exp  RPAREN  
@@ -329,15 +360,29 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 				{
 					CodeBuffer::instance().bpatch($10.nextList,$4.instr); 
 					CodeBuffer::instance().bpatch($5.trueList,$9.instr);
+					
+					//////
+
+
+					//CodeBuffer::instance().emit("finishing while statement is: " + $10.name
+					//+", whileBreakList size is: " + intToString($10.whileBreakList.size()));
+					//////
 					$$.nextList = CodeBuffer::instance().merge($10.whileBreakList, $5.falseList);
+					
 					CodeBuffer::instance().emit("b " + $4.instr);
-				}
+					
+				} 
 			|	BREAK SC 
 				{
 					if ((m_iWhileCounter) <= 0) {
 						errorUnexpectedBreak(yylineno); exit(0);
 					}
-					$$.whileBreakList = CodeBuffer::makelist(CodeBuffer::instance().emit("b "));
+					$$.whileBreakList = CodeBuffer::makelist(CodeBuffer::instance().emit("j "));
+					
+					//////
+					//CodeBuffer::instance().emit("in break---");
+					//$$.name = "break!!";
+					/////////
 					
 				}
 			;
