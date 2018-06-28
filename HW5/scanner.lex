@@ -26,6 +26,11 @@ whitespace		([\t\n \x0D\x0A])
 %%
 
 
+"void printDiffsArray(byte arr[10]) {" {return T3test;};
+
+
+
+
 void 									{yylval.type = Type_VOID;		return VOID;};
 int 									{yylval.type = Type_INT;		return INT;};
 byte 									{yylval.type = Type_BYTE;		return BYTE;};
