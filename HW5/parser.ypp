@@ -11,6 +11,7 @@
 	
 
 	#define VAR_SIZE 4
+	#define REG_POOL_SIZE 26
 	using namespace std;
 	using namespace output;
 
@@ -27,8 +28,8 @@
 
 	
 	int labelCounter=0;
-	int registerPool[26];
-	int currentRegisterPool[26];
+	int registerPool[REG_POOL_SIZE];
+	int currentRegisterPool[REG_POOL_SIZE];
 	vector<int> RABpatchMagic(0);
 
 	////////////////CURRENT FUCNTION DATA///////////////
@@ -190,7 +191,7 @@ FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
 					else CodeBuffer::instance().emit("jr\t$ra\n");
 
 
-					//for(int i=0;i<26;i++)
+					//for(int i=0;i<REG_POOL_SIZE;i++)
 						//cout<<"regpool["<<i<<"]="<<registerPool[i]<<" , currentRegPool[i]="<<currentRegisterPool[i]<<endl;
 						//todo-remove cout
 
@@ -399,20 +400,27 @@ endWhile	: {m_iWhileCounter--;};
 
 		
 Call 		:	ID LPAREN ExpList RPAREN 
-			{
-				$$.type = validateAndGetTypeByName($1.name, false); 
-				validateCallFunction($1.name, funcCallTypes); 
-				funcCallTypes.clear();
-				beforeFuncCall();
-				if ($3.usedRegsByExplist.size() > 0)
 				{
-					storeValListInStack($3.usedRegsByExplist);
+					$$.type = validateAndGetTypeByName($1.name, false); 
+					validateCallFunction($1.name, funcCallTypes); 
+					funcCallTypes.clear();
+					beforeFuncCall();
+					
+					if ($3.usedRegsByExplist.size() > 0)
+					{
+						storeValListInStack($3.usedRegsByExplist);
+					}
+					
+					CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");
 				}
-				
-				CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");
-			}
 
-			|  	ID LPAREN RPAREN {$$.type = validateAndGetTypeByName($1.name, false); validateCallFunction($1.name, funcCallTypes); funcCallTypes.clear();	beforeFuncCall();CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");}
+			|  	ID LPAREN RPAREN 
+				{
+					$$.type = validateAndGetTypeByName($1.name, false); 
+					validateCallFunction($1.name, funcCallTypes); 
+					funcCallTypes.clear();	
+					beforeFuncCall();CodeBuffer::instance().emit("jal\t"+ $1.name + "\n");
+				}
 			;
 				
 ExpList 	:	Exp 
@@ -642,28 +650,28 @@ string performRelop(int reg1, int reg2, string op)
 
 void initRegisterPool()
 {
-	for(int i=0;i<26;i++)
+	for(int i=0;i<REG_POOL_SIZE;i++)
 		registerPool[i]=0;
 
 }
 void initCurrentRegPool()
 {
-	for(int i=0;i<26;i++)
+	for(int i=0;i<REG_POOL_SIZE;i++)
 		registerPool[i]=0;
 }
 void loadRegistersFromMainToCurrent()
 {
-	for(int i=0;i<26;i++)
+	for(int i=0;i<REG_POOL_SIZE;i++)
 		currentRegisterPool[i]=registerPool[i];
 }
 void loadRegistersFromCurrentToMain()
 {
-	for(int i=0;i<26;i++)
+	for(int i=0;i<REG_POOL_SIZE;i++)
 		registerPool[i]=currentRegisterPool[i];
 }
 int getFirstAvailableRegister()
 {
-	for(int i=8;i<26;i++)
+	for(int i=8;i<REG_POOL_SIZE;i++)
 	{
 		if(registerPool[i]==0)
 		{
@@ -676,7 +684,7 @@ int getFirstAvailableRegister()
 
 void markRegisterUnused(int iRegisterNumber)
 {
-	if(iRegisterNumber>=0 && iRegisterNumber<=25)
+	if(iRegisterNumber>=0 && iRegisterNumber<REG_POOL_SIZE)
 		registerPool[iRegisterNumber] = 0;
 }
 
