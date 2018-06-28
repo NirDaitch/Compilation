@@ -418,14 +418,16 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 				}
 				int tmpRegister = getFirstAvailableRegister();
 				markRegisterUsed(tmpRegister);
-				CodeBuffer::instance().emit("addi\t$" + intToString(tmpRegister) + ", $" +intToString($3.resultReg)+", "+intToString(offsetFromFP) +"\n");
+				CodeBuffer::instance().emit("addi\t$" + intToString(tmpRegister) + ", $" + intToString($3.resultReg)+", "+intToString(offsetFromFP) +"\n");
 				CodeBuffer::instance().emit("sub\t$" + intToString(tmpRegister) + ", $0 " + ", $" + intToString(tmpRegister) +"\n");
 				//tmpRegister holds -offset, now we need to *4
 				int tmpRegister2=putNumInRegister(VAR_SIZE);
-				generateBinop3("*",tmpRegister,tmpRegister2,$3.type);
+				generateBinop3("*",tmpRegister,tmpRegister2,Type_INT);
 				//tmpregister2 is freed.
+				
 
-				CodeBuffer::instance().emit("lw\t$" + intToString(iDestRegister) + ", " +intToString(tmpRegister)+"($fp)\n");
+				CodeBuffer::instance().emit("add\t$" + intToString(tmpRegister) + ", $" +intToString(tmpRegister)+", $fp\n");
+				CodeBuffer::instance().emit("lw\t$" + intToString(iDestRegister) + ", ($" +intToString(tmpRegister)+")\n");
 				$$.resultReg=iDestRegister;
 				markRegisterUnused(tmpRegister);
 			}
