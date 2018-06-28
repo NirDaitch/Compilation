@@ -33,6 +33,7 @@ class EXP_ATTRIBUTE {
 	vector<int> falseList;
 	vector<int> nextList;
 	vector<int> whileBreakList;
+	vector<int> usedRegsByExplist;
 	
 	string instr;
 	int sizeForStack;
@@ -46,6 +47,7 @@ class EXP_ATTRIBUTE {
 		this->falseList = std::vector<int>();
 		this->nextList = std::vector<int>();
 		this->whileBreakList = std::vector<int>();
+		this->usedRegsByExplist = std::vector<int>();
 		this->instr="";
 		this->sizeForStack=0;
 	};
