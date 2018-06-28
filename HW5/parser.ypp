@@ -346,12 +346,19 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE ScopeEnd
 					$$.nextList=CodeBuffer::instance().merge($3.falseList,$7.nextList);
 					$$.whileBreakList = $7.whileBreakList;
 				} 
-			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement 
+			|   IF LPAREN  Exp_boolean RPAREN ScopeStart M  Statement ScopeEnd ELSE ScopeStart N M Statement ScopeEnd
 				{
 					bpIF2Statement($$,$3,$6,$12,$7,$11,$13);
+					
+					//////
+
+
+					//CodeBuffer::instance().emit("finishing if (statement) whileBreakList size is: " + intToString($7.whileBreakList.size()));					
+					//CodeBuffer::instance().emit("finishing else statement whileBreakList size is: " + intToString($13.whileBreakList.size()));
+					//////
 					$$.whileBreakList = CodeBuffer::instance().merge($7.whileBreakList, $13.whileBreakList);
 				} 
-				ScopeEnd
+				
 			|	WHILE startWhile LPAREN M Exp  RPAREN  
 				{
 					isBoolean($5.type);
@@ -366,7 +373,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE ScopeEnd
 
 					//CodeBuffer::instance().emit("finishing while statement is: " + $10.name
 					//+", whileBreakList size is: " + intToString($10.whileBreakList.size()));
-					//////
+					////////
 					$$.nextList = CodeBuffer::instance().merge($10.whileBreakList, $5.falseList);
 					
 					CodeBuffer::instance().emit("b " + $4.instr);
