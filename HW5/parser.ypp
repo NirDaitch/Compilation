@@ -290,15 +290,20 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE {/* TODO: $$.nextList=$3.nextLi
 			|	RETURN  SC { checkFuncValidReturn(Type_VOID,-1, false); int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);
 
-				int expReg=$2.resultReg;
 				if ($2.type == Type_BOOL) 
-					{
-						handleBoolean($2);
-						
-					}
-				markRegisterUnused($2.resultReg);
-				//CodeBuffer::instance().emit("move\t$v0 ,$" + intToString(expReg) + "\n" ); //todo- when enabling this, 2 tests fail
+				{
+					handleBoolean($2);
+					
+					//CodeBuffer::instance().emit("its a boolean");
+				}
+				
+				//if ($2.resultReg == -1) {
+				//	CodeBuffer::instance().emit( "found -1 : " + $2.name );
+				//}
+				
+				CodeBuffer::instance().emit("move\t$v0 ,$" + intToString($2.resultReg) + "\n" ); //todo- when enabling this, 2 tests fail
 				//those 2 tests are on level 5.
+				markRegisterUnused($2.resultReg);
 
 				int tmp = CodeBuffer::instance().emit("b ");
 				RABpatchMagic.push_back(tmp);
