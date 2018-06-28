@@ -66,6 +66,7 @@
 	void program_scope_start();
 	
 	void end_Scope();
+	void end_scope2();
 	int getExpSizeFromTable(string name);
 	void isBoolean(Type t);
 	void isIntOrByte(Type t);
@@ -195,10 +196,11 @@ FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
 					//for(int i=0;i<REG_POOL_SIZE;i++)
 						//cout<<"regpool["<<i<<"]="<<registerPool[i]<<" , currentRegPool[i]="<<currentRegisterPool[i]<<endl;
 						//todo-remove cout
+					end_scope2();
 
 
 
-				} ScopeEnd/*TODO- maybe put it back where it belonged at the end of line 170*/
+				} 
 			;
 
 FuncDeclStart:	{m_iFUNCTION_CurrentOffset = -1; funcArgs.clear();};	
@@ -1595,6 +1597,57 @@ void start_scope_function()
 	m_stScopeStack.push_front(newTable);
 }
 
+void end_scope2()
+{
+	int variablesCounter=0;
+	SymbolTable& top = m_stScopeStack.front();
+	endScope();
+	if (top.lstSymbols.size() > 0) {
+		for (list<T_Symbol>::iterator it=top.lstSymbols.begin(); it!=top.lstSymbols.end(); ++it) {
+			T_Symbol curr = *it;
+			
+
+			
+			if (curr.isFunction)
+			{
+				vector<string> lstArgsAsStrings = generateStringTypes(curr.lstArgs);
+				//cout << "function type is: " << TYPES_TO_STRING[curr.type] << endl;
+				string sFunctionType = makeFunctionType(TYPES_TO_STRING[curr.type], lstArgsAsStrings);
+				printID(curr.name, 0, sFunctionType);
+			}
+			else
+			{
+				
+
+				if (curr.Type_ARRAY_SIZE != -1)
+				{
+					variablesCounter+=curr.Type_ARRAY_SIZE;//TODO:make sure its the correct size
+					string sArrayType = makeArrayType(TYPES_TO_STRING[curr.type], curr.Type_ARRAY_SIZE);
+					printID(curr.name, curr.offset, sArrayType);
+					//cout <<"curr name: "<<curr.name<< "curr offset: " << m_iCurrentOffset << "calling -arraysize"<< endl;
+
+					if(curr.offset>=0)
+						m_iCurrentOffset-=curr.Type_ARRAY_SIZE;
+				}
+				else
+				{
+					printID(curr.name, curr.offset, TYPES_TO_STRING[curr.type]);
+					variablesCounter++;
+					//cout <<"curr name: "<<curr.name<< "curr offset: " << m_iCurrentOffset << "calling --" <<endl;
+					if(curr.offset>=0)
+						m_iCurrentOffset--;				
+					
+				}
+
+				
+			}
+		}
+	}
+	ostringstream ss;
+	ss << VAR_SIZE* variablesCounter;
+
+	m_stScopeStack.pop_front();
+}
 void end_Scope()
 {
 	int variablesCounter=0;
