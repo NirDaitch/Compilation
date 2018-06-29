@@ -98,7 +98,7 @@
 	int getOffset(string name);
 	void storeValInStack(string variable, int iRegisterNumber);		
 	void storeValArrayInStack(string arrayID, int indexRegister, int toStoreRegister);
-	void loadValFromStack(string variable, EXP_ATTRIBUTE& leftexp);
+	void loadValFromStack(int posOfVar, EXP_ATTRIBUTE& leftExp, Type type);
 	void addPrintHelper();
 	void addPrintiHelper();
 	void storeFuncRetAddrInStack(int numOfArgs);
@@ -174,6 +174,7 @@ Funcs		:	FuncDecl	Funcs
 			|	;
 
 FuncDecl	:	 FuncDeclStart	RetType	ID	LPAREN	Formals {
+
 					CodeBuffer::instance().emit($3.name+":");
 					initializeStackFP();
 					storeFuncRetAddrInStack($5.sizeForStack); 
@@ -503,7 +504,14 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 				{ 
 					$$.type = validateAndGetTypeByName($1.name, true);
 					$$.name = $1.name; $$.is_array = getIsArray($1.name); 
-					loadValFromStack($1.name, $$);
+						
+					////////
+					//CodeBuffer::instance().emit("loading from stack: " + variable + "\n");
+					//CodeBuffer::instance().emit("loading from offset is: " + intToString(symb.offset) + "\n");
+					///////////
+					T_Symbol symb=getSymbol($1.name);
+	
+					loadValFromStack(symb.offset, $$, symb.type);
 				}
 			|	Call			{ 
 			$$.type = $1.type;
@@ -1014,17 +1022,15 @@ void storeValArrayInStack(string arrayID, int indexRegister, int toStoreRegister
 	markRegisterUnused(indexRegister);
 }
 
-void loadValFromStack(string variable, EXP_ATTRIBUTE& leftExp)
+void loadValFromStack(int posOfVar, EXP_ATTRIBUTE& leftExp, Type type)
 {
 	/// TODO: deal with array
-	T_Symbol symb=getSymbol(variable);
 
-	int posOfVar=symb.offset;	//TODO- make sure its correct
 	int offsetFromFP = -posOfVar*VAR_SIZE;
 	int iDestRegister = getFirstAvailableRegister();
 	markRegisterUsed(iDestRegister);
 
-	if (symb.type == Type_BOOL)
+	if (type == Type_BOOL)
 	{
 		int iRegister = getFirstAvailableRegister();
 		markRegisterUsed(iRegister);
