@@ -1,0 +1,240 @@
+.data
+throwDivException: .asciiz "Error division by zero\n"
+throwIndexOutOfRange: .asciiz "Error index out of bounds\n"
+mylbl_0: .asciiz "Diffs:\n1	2	253	48	208	0	20	236	255\n"
+.text
+divisionERR:
+li $v0,4
+la $a0,throwDivException
+syscall
+li $v0,10
+syscall
+print:
+addi $fp, $sp, -4
+
+sw	$ra , 4($sp)
+lw	$a0,0($sp)
+
+li	$v0,4
+
+syscall
+
+add	$sp, $fp, 8
+
+lw	$ra, 0($sp)
+
+lw	$fp, 4($sp)
+
+add	$sp, $sp, 8
+
+lw	$8,0($sp)
+
+lw	$9,4($sp)
+
+lw	$10,8($sp)
+
+lw	$11,12($sp)
+
+lw	$12,16($sp)
+
+lw	$13,20($sp)
+
+lw	$14,24($sp)
+
+lw	$15,28($sp)
+
+lw	$16,32($sp)
+
+lw	$17,36($sp)
+
+lw	$18,40($sp)
+
+lw	$19,44($sp)
+
+lw	$20,48($sp)
+
+lw	$21,52($sp)
+
+lw	$22,56($sp)
+
+lw	$23,60($sp)
+
+lw	$24,64($sp)
+
+lw	$25,68($sp)
+
+addi $sp , $sp,72
+
+jr	$ra
+
+printi:
+addi $fp, $sp, -4
+
+sw	$ra , 4($sp)
+lw	$a0,0($sp)
+
+li	$v0,1
+
+syscall
+
+add	$sp, $fp, 8
+
+lw	$ra, 0($sp)
+
+lw	$fp, 4($sp)
+
+add	$sp, $sp, 8
+
+lw	$8,0($sp)
+
+lw	$9,4($sp)
+
+lw	$10,8($sp)
+
+lw	$11,12($sp)
+
+lw	$12,16($sp)
+
+lw	$13,20($sp)
+
+lw	$14,24($sp)
+
+lw	$15,28($sp)
+
+lw	$16,32($sp)
+
+lw	$17,36($sp)
+
+lw	$18,40($sp)
+
+lw	$19,44($sp)
+
+lw	$20,48($sp)
+
+lw	$21,52($sp)
+
+lw	$22,56($sp)
+
+lw	$23,60($sp)
+
+lw	$24,64($sp)
+
+lw	$25,68($sp)
+
+addi $sp , $sp,72
+
+jr	$ra
+
+indexERR:
+li $v0,4
+la $a0,throwIndexOutOfRange
+syscall
+li $v0,10
+syscall
+main:
+addi $fp, $sp, -4
+
+sw	$ra , 0($sp)
+la	$8, mylbl_0
+
+addi $sp , $sp,-72
+
+sw	$8, 0($sp)
+
+sw	$9, 4($sp)
+
+sw	$10, 8($sp)
+
+sw	$11, 12($sp)
+
+sw	$12, 16($sp)
+
+sw	$13, 20($sp)
+
+sw	$14, 24($sp)
+
+sw	$15, 28($sp)
+
+sw	$16, 32($sp)
+
+sw	$17, 36($sp)
+
+sw	$18, 40($sp)
+
+sw	$19, 44($sp)
+
+sw	$20, 48($sp)
+
+sw	$21, 52($sp)
+
+sw	$22, 56($sp)
+
+sw	$23, 60($sp)
+
+sw	$24, 64($sp)
+
+sw	$25, 68($sp)
+
+addi	$sp, $sp, -8
+
+sw	$fp, 4($sp)
+
+add $sp , $sp , -4
+
+sw	$8, 0($sp)
+
+jal	print
+
+label_100:
+label_101:
+addi	$sp, $fp, 4
+
+lw	$ra, 0($sp)
+
+lw	$fp, 4($sp)
+
+addi	$sp, $sp, 8
+
+lw	$8,0($sp)
+
+lw	$9,4($sp)
+
+lw	$10,8($sp)
+
+lw	$11,12($sp)
+
+lw	$12,16($sp)
+
+lw	$13,20($sp)
+
+lw	$14,24($sp)
+
+lw	$15,28($sp)
+
+lw	$16,32($sp)
+
+lw	$17,36($sp)
+
+lw	$18,40($sp)
+
+lw	$19,44($sp)
+
+lw	$20,48($sp)
+
+lw	$21,52($sp)
+
+lw	$22,56($sp)
+
+lw	$23,60($sp)
+
+lw	$24,64($sp)
+
+lw	$25,68($sp)
+
+addi $sp , $sp,72
+
+li	$v0 , 10
+
+syscall
+
+add	$sp, $sp, 0

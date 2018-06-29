@@ -26,7 +26,7 @@ whitespace		([\t\n \x0D\x0A])
 %%
 
 
-"void printDiffsArray".* {return T3test;};
+"void printDiffsArray".* {return EasyT3test;};
 
 
 
