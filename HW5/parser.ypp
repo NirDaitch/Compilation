@@ -431,7 +431,14 @@ ExpList 	:	Exp
 					symbol.name=$1.name; 
 					funcCallTypes.push_back(symbol);
 					
-					$$.sizeForStack = 1;
+					int sizeForStack = 1;
+					if ($1.is_array)
+					{
+						//////HERE
+						sizeForStack = 1;
+					}
+					
+					$$.sizeForStack = sizeForStack;
 					if ($1.type == Type_BOOL) 
 					{
 						handleBoolean($1);
@@ -452,7 +459,15 @@ ExpList 	:	Exp
 					symbol.type=$1.type; 
 					symbol.name=$1.name; 
 					funcCallTypes.push_back(symbol);
-					$$.sizeForStack = $3.sizeForStack+$1.sizeForStack;
+					
+					int sizeForStack = 1;
+					if ($1.is_array)
+					{
+						//////HERE
+						sizeForStack = 1;
+					}
+					
+					$$.sizeForStack = $3.sizeForStack+sizeForStack;
 					
 					$$.usedRegsByExplist = $3.usedRegsByExplist;
 					$$.usedRegsByExplist.push_back($1.resultReg); 
