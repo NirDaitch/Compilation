@@ -319,7 +319,7 @@ Statement	:	LBRACE	 ScopeStart	Statements RBRACE ScopeEnd
 			|	Call SC
 			|	RETURN  SC { checkFuncValidReturn(Type_VOID,-1, false); int tmp = CodeBuffer::instance().emit("b ");RABpatchMagic.push_back(tmp);}
 			|	RETURN  Exp SC {checkFuncValidReturn($2.type,getExpSizeFromTable($2.name),$2.is_array);
-
+ 
 				if ($2.type == Type_BOOL) 
 				{
 					handleBoolean($2);
