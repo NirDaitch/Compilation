@@ -210,13 +210,13 @@ RetType		:	Type {$$.type=$1.type;}
 Formals		:	FormalsList {$$.sizeForStack = $1.sizeForStack;}
 			|	;
 
-FormalsList	:	FormalDecl {$$.sizeForStack = 1;}
-			|	FormalDecl	COMMA	FormalsList {$$.sizeForStack = $3.sizeForStack+1;}
+FormalsList	:	FormalDecl {$$.sizeForStack = $1.sizeForStack;}
+			|	FormalDecl	COMMA	FormalsList {$$.sizeForStack = $3.sizeForStack + $1.sizeForStack;}
 			;
 				
-FormalDecl	:	Type	ID { funcArgs.push_back(createFunctionSymbol($2.name, $1.type, -1));}
-			|	Type	ID	LBRACK	NUM	RBRACK { validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
-			|	Type	ID	LBRACK	NUM		B	RBRACK { checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name);  funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value));}
+FormalDecl	:	Type	ID { funcArgs.push_back(createFunctionSymbol($2.name, $1.type, -1)); $$.sizeForStack = 1;}
+			|	Type	ID	LBRACK	NUM	RBRACK { validateArraySize($4.num_value, $2.name); funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value)); $$.sizeForStack = 1;}
+			|	Type	ID	LBRACK	NUM		B	RBRACK { checkByteSize($4.num_value, $4.name); validateArraySize($4.num_value, $2.name);  funcArgs.push_back(createFunctionSymbol($2.name, $1.type, $4.num_value)); $$.sizeForStack = 1;}
 			;
 				
 Statements	:	Statement 
@@ -430,8 +430,8 @@ ExpList 	:	Exp
 					symbol.type=$1.type; 
 					symbol.name=$1.name; 
 					funcCallTypes.push_back(symbol);
-					$$.sizeForStack =1;
 					
+					$$.sizeForStack = 1;
 					if ($1.type == Type_BOOL) 
 					{
 						handleBoolean($1);
@@ -452,7 +452,7 @@ ExpList 	:	Exp
 					symbol.type=$1.type; 
 					symbol.name=$1.name; 
 					funcCallTypes.push_back(symbol);
-					$$.sizeForStack = $3.sizeForStack+1;
+					$$.sizeForStack = $3.sizeForStack+$1.sizeForStack;
 					
 					$$.usedRegsByExplist = $3.usedRegsByExplist;
 					$$.usedRegsByExplist.push_back($1.resultReg); 
@@ -465,7 +465,11 @@ Type		:	INT		{ $$.type = Type_INT;}
 
 			
 Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseList = $2.falseList;$$.resultReg=$2.resultReg;}
-			|	ID LBRACK Exp RBRACK {$$.type=validateAndGetTypeByName($1.name, true); $$.name = $1.name; isIntOrByte($3.type); validateIsArray($1.name);
+			|	ID LBRACK Exp RBRACK {
+				$$.type=validateAndGetTypeByName($1.name, true); 
+				$$.name = $1.name; 
+				isIntOrByte($3.type); 
+				validateIsArray($1.name);
 
 				checkIndexOutOfRange($1,$3);
 				
