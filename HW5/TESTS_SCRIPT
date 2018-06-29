@@ -1,5 +1,5 @@
 #!/bin/bash
-cp *.cpp *.h *.c *.hpp *.lex *.ypp ./HW5_TESTS_18/;
-cd HW5_TESTS_18/;
+cp *.cpp *.h *.c *.hpp *.lex *.ypp ./HW5_TESTS_26/;
+cd HW5_TESTS_26/;
 ./funMe 1;
 cd -;
