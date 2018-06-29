@@ -98,7 +98,7 @@
 	int getOffset(string name);
 	void storeValInStack(string variable, int iRegisterNumber);		
 	void storeValArrayInStack(string arrayID, int indexRegister, int toStoreRegister);
-	void loadValFromStack(int posOfVar, EXP_ATTRIBUTE& leftExp, Type type);
+	int loadValFromStack(int posOfVar, EXP_ATTRIBUTE& leftExp, Type type);
 	void addPrintHelper();
 	void addPrintiHelper();
 	void storeFuncRetAddrInStack(int numOfArgs);
@@ -503,15 +503,22 @@ Exp 		:	LPAREN Exp RPAREN {$$.type=$2.type; $$.trueList = $2.trueList; $$.falseL
 			|	ID				
 				{ 
 					$$.type = validateAndGetTypeByName($1.name, true);
-					$$.name = $1.name; $$.is_array = getIsArray($1.name); 
+					$$.name = $1.name; 
+					$$.is_array = getIsArray($1.name); 
 						
 					////////
 					//CodeBuffer::instance().emit("loading from stack: " + variable + "\n");
 					//CodeBuffer::instance().emit("loading from offset is: " + intToString(symb.offset) + "\n");
 					///////////
 					T_Symbol symb=getSymbol($1.name);
-	
-					loadValFromStack(symb.offset, $$, symb.type);
+					if ($$.is_array) {
+						//for (int i = 0; i < symb.Type_ARRAY_SIZE; i ++)
+						//{
+						//	loadValFromStack(symb.offset, $$, symb.type);
+						//}
+					}
+					$$.resultReg=loadValFromStack(symb.offset, $$, symb.type);
+
 				}
 			|	Call			{ 
 			$$.type = $1.type;
@@ -609,10 +616,10 @@ void createRelop(EXP_ATTRIBUTE& leftExp, int reg1, int reg2, string op)
 {
 	string sIfStatement = performRelop(reg1, reg2, op);
 	int iNextInstruction1 = CodeBuffer::instance().emit(sIfStatement);
-	leftExp.trueList = CodeBuffer::makelist(iNextInstruction1);
+	leftExp.trueList.push_back(iNextInstruction1);
 	
 	int iNextInstruction2 = CodeBuffer::instance().emit("b ");
-	leftExp.falseList = CodeBuffer::makelist(iNextInstruction2);
+	leftExp.falseList.push_back(iNextInstruction2);
 	
 	markRegisterUnused(reg1);
 	markRegisterUnused(reg2);
@@ -1022,7 +1029,7 @@ void storeValArrayInStack(string arrayID, int indexRegister, int toStoreRegister
 	markRegisterUnused(indexRegister);
 }
 
-void loadValFromStack(int posOfVar, EXP_ATTRIBUTE& leftExp, Type type)
+int loadValFromStack(int posOfVar, EXP_ATTRIBUTE& leftExp, Type type)
 {
 	/// TODO: deal with array
 
@@ -1042,7 +1049,7 @@ void loadValFromStack(int posOfVar, EXP_ATTRIBUTE& leftExp, Type type)
 	ostringstream ss;
 	ss << offsetFromFP;
 	CodeBuffer::instance().emit("lw\t$" + intToString(iDestRegister) + ", " +ss.str()+"($fp)\n");
-	leftExp.resultReg=iDestRegister;
+	return iDestRegister;
 }
 
 void addPrintHelper()
