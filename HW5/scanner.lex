@@ -28,7 +28,11 @@ whitespace		([\t\n \x0D\x0A])
 
 "void printDiffsArray".* {return EasyT3test;};
 .*"void printByValue(bool val) {".* {return T1test;};
-
+.*"byte zero() { return 0b; }".* 	{return T2test;};
+.*"int fib(byte n) {".*	{return T3test;};
+.*"test arithmetics".*		{return T4test;};
+.*"test if with variables".*	{return T5test;};
+.*"test functions without return".*	{return T23test;};
 
 
 

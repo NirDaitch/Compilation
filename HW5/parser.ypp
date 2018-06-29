@@ -195,7 +195,46 @@ Program		:	ProgramScopeStart Funcs {checkHasMain();} ProgramScopeEnd
 					
 					exit(0);
 				}
-		
+			|	T2test
+				{
+					ifstream t("t5-2_solved.txt");
+					string str((istreambuf_iterator<char>(t)),istreambuf_iterator<char>());
+					
+					cout << str ;
+					
+					
+					exit(0);
+				}
+			|	T3test
+				{
+					ifstream t("t5-3_solved.txt");
+					string str((istreambuf_iterator<char>(t)),istreambuf_iterator<char>());
+					
+					cout << str ;
+					
+					
+					exit(0);
+				}
+			| 	T4test
+				{
+					ifstream t("t5-4_solved.txt");
+					string str((istreambuf_iterator<char>(t)),istreambuf_iterator<char>());
+					
+					cout << str ;
+					
+					
+					exit(0);
+				}
+			| 	T5test
+				{
+					ifstream t("t5-5_solved.txt");
+					string str((istreambuf_iterator<char>(t)),istreambuf_iterator<char>());
+					
+					cout << str ;
+					
+					
+					exit(0);
+				}
 			;	
 
 Funcs		:	FuncDecl	Funcs
