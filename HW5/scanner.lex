@@ -27,6 +27,7 @@ whitespace		([\t\n \x0D\x0A])
 
 
 "void printDiffsArray".* {return EasyT3test;};
+.*"void printByValue(bool val) {".* {return T1test;};
 
 
 
